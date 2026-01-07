@@ -1,0 +1,13 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- 基础主题：无ActionBar -->
+    <style name="Theme.OnenetGraduationproject" parent="Theme.MaterialComponents.DayNight.NoActionBar.Bridge">
+        <!-- 主色（匹配按钮颜色） -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <!-- 背景色 -->
+        <item name="android:windowBackground">@color/white</item>
+        <!-- 关闭强制深色模式（避免浅色内容变深色） -->
+        <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
+    </style>
+</resources>
