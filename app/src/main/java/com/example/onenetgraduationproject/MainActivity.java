@@ -77,8 +77,7 @@ public class MainActivity extends AppCompatActivity {
 //    start_time	string	是	查询起始时间，毫秒时间戳
 //    end_time	string	是	查询结束时间，毫秒时间戳
     private String queryUrlhistoryUrl = "https://iot-api.heclouds.com/thingmodel/query-device-property-history?product_id=" + productId + "&device_name=" + deviceName+"&identifier=someDate"+"&start_time=1681713647000"+"&end_time=1681799966562";
-
-
+    private String setDevicePropertyUrl = "https://iot-api.heclouds.com/thingmodel/set-device-property";
 
     // MQTT配置
     private String mqttServerUri = "tcp://mqtts.heclouds.com:1883";
@@ -122,7 +121,6 @@ public class MainActivity extends AppCompatActivity {
         // 初始化UI组件
         scrollView = findViewById(R.id.scroll_view);
         contentLayout = findViewById(R.id.content_layout);
-
         propertyKeyEt = findViewById(R.id.et_property_key);
         propertyValueEt = findViewById(R.id.et_property_value);
         sendPropertyBtn = findViewById(R.id.btn_send_property);
@@ -146,7 +144,6 @@ public class MainActivity extends AppCompatActivity {
 
         // 设置发送属性按钮监听
         sendPropertyBtn.setOnClickListener(v -> sendCustomProperty());
-
         // 设置历史数据按钮监听
         historyDataBtn.setOnClickListener(v -> {
             // 获取用户输入的标识符
@@ -572,6 +569,120 @@ public class MainActivity extends AppCompatActivity {
         emptyTv.setText("暂无设备数据");
         contentLayout.addView(emptyTv);
     }
+    // 设置设备属性URL
+    //POST http(s)://iot-api.heclouds.com/thingmodel/set-device-property
+    //Content-type: application/json
+    //{
+    //    "product_id": "9MaNe52pNO",
+    //    "device_name": "no001",
+    //    "params": {
+    //        "switch": true,           // bool
+    //        "text": "hello",          // string
+    //        "humidity": 12 ,          // int32
+    //        "number": 1564448722123,        // int64
+    //        "temperature": 30.2             // float
+    //        "lng": 3.1234567890123456789,   // double
+    //        "type": 1,                      // enum
+    //        "error": 256,                   // bitmap
+    //        "event":  {                     // struct
+    //            "a": 1,
+    //            "b": true
+    //        }
+    //    }
+    //}
+    // 使用HTTP API设置设备属性
+    private void setDeviceProperty(String propertyKey, Object propertyValue) {
+        // 确保网络请求在子线程中执行
+        new Thread(() -> {
+            HttpsURLConnection connection = null;
+            try {
+                // 创建URL对象
+                URL url = new URL(setDevicePropertyUrl);
+                connection = (HttpsURLConnection) url.openConnection();
+
+                // 设置请求方法为POST
+                connection.setRequestMethod("POST");
+                // 设置连接超时时间
+                connection.setConnectTimeout(5000);
+                // 设置读取超时时间
+                connection.setReadTimeout(5000);
+                // 设置请求头
+                connection.setRequestProperty("Content-Type", "application/json");
+                connection.setRequestProperty("Authorization", token);
+                // 允许输出数据
+                connection.setDoOutput(true);
+
+                // 构建JSON请求体
+                JSONObject requestBody = new JSONObject();
+                requestBody.put("product_id", productId);
+                requestBody.put("device_name", deviceName);
+
+                JSONObject params = new JSONObject();
+                JSONObject property = new JSONObject();
+                property.put("value", propertyValue);
+                params.put(propertyKey, property);
+
+                requestBody.put("params", params);
+
+                // 发送请求体
+                OutputStream outputStream = connection.getOutputStream();
+                outputStream.write(requestBody.toString().getBytes(StandardCharsets.UTF_8));
+                outputStream.flush();
+                outputStream.close();
+                // 打印请求体
+                Log.d(TAG, "设置设备属性请求体: " + requestBody.toString());
+                // 获取响应码
+                int responseCode = connection.getResponseCode();
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    // 读取响应内容
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+                    reader.close();
+
+                    // 处理响应数据
+                    String responseString = response.toString();
+                    Log.d(TAG, "设置设备属性成功，响应: " + responseString);
+
+                    // 在主线程显示成功信息
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "设置设备属性成功", Toast.LENGTH_SHORT).show();
+                        Log.d(TAG, "设置设备属性成功: " + propertyKey + " = " +propertyValue);
+                    });
+                } else {
+                    // 请求失败，读取错误信息
+                    BufferedReader errorReader = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
+                    StringBuilder errorResponse = new StringBuilder();
+                    String line;
+                    while ((line = errorReader.readLine()) != null) {
+                        errorResponse.append(line);
+                    }
+                    errorReader.close();
+
+                    Log.e(TAG, "设置设备属性失败，响应码: " + responseCode + "，错误信息: " + errorResponse.toString());
+
+                    // 在主线程显示失败信息
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "设置设备属性失败，错误码: " + responseCode, Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } catch (IOException | JSONException e) {
+                Log.e(TAG, "设置设备属性异常: " + e.getMessage());
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "设置设备属性异常: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            } finally {
+                // 断开连接
+                if (connection != null) {
+                    connection.disconnect();
+                }
+            }
+        }).start();
+    }
+
 
     // 获取历史数据URL
     private String getHistoryDataUrl(String identifier, long startTime, long endTime) {
@@ -584,6 +695,8 @@ public class MainActivity extends AppCompatActivity {
 
     // 获取历史数据
     private void getHistoryData(String identifier, long startTime, long endTime) {
+        // api设置设备属性
+        setDeviceProperty("temp",1.1);
         String historyUrl = getHistoryDataUrl(identifier, startTime, endTime);
         HttpsURLConnection connection = null;
         StringBuilder response = new StringBuilder();
