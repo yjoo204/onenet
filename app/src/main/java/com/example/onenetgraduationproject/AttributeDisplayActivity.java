@@ -130,23 +130,9 @@ public class AttributeDisplayActivity extends AppCompatActivity {
 
     private void initViews() {
         // 状态文本 - 与布局ID匹配
-        tvPersonStatus = findViewById(R.id.tv_person_status);
-        tvLedStatus = findViewById(R.id.tv_led_status);
         tvTemperature = findViewById(R.id.tv_temperature_value);
         tvHumidity = findViewById(R.id.tv_humidity_value);
-        tvLight = findViewById(R.id.tv_light_value);
         tvSmoke = findViewById(R.id.tv_smoke_value);
-
-        // 温度进度条
-        circularProgressBar = findViewById(R.id.circularProgressBar);
-        circularProgressBar.setProgressMax(100); // 设置温度最大值
-
-        // 跳转按钮 - 只初始化存在的按钮
-        ibtn_settings = findViewById(R.id.ibtn_settings);
-        // btnGoToMain1 和 btnGoToMain2 在布局中不存在，移除相关代码
-
-        // 新增：LED开关
-        ledSwitch = findViewById(R.id.switch_led);
     }
 
     // 初始化MQTT（从MainActivity迁移过来）
