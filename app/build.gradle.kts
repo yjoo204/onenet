@@ -47,10 +47,13 @@ dependencies {
     implementation ("org.eclipse.paho:org.eclipse.paho.android.service:1.1.1")
 
     // 图表库
-    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    //implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 
     //环形进度条
-    implementation("com.mikhaellopez:circularprogressbar:3.1.0")
+    //implementation("com.mikhaellopez:circularprogressbar:3.1.0")
+
+    //AAChartCore统计图库
+    implementation("com.github.AAChartModel:AAChartCore:-SNAPSHOT")
 
     implementation(libs.appcompat)
     implementation(libs.material)

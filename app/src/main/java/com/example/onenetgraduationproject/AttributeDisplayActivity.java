@@ -1,18 +1,16 @@
 package com.example.onenetgraduationproject;
 
-import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
-import android.widget.ImageButton;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import android.content.Intent;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.mikhaellopez.circularprogressbar.CircularProgressBar;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
@@ -25,7 +23,6 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -38,21 +35,15 @@ import javax.net.ssl.HttpsURLConnection;
 
 public class AttributeDisplayActivity extends AppCompatActivity {
     private static final String TAG = "AttributeDisplay";
-    private static final int REQUEST_MAIN_ACTIVITY = 100;
-
-    private boolean isMqttConnected = false;
-    private boolean isSubscribed = false;
-
     // 添加静态变量用于共享MQTT客户端
+    private BottomNavigationView bottomNavigationView;
     private static MqttAndroidClient sharedMqttClient;
-
     // OneNet平台配置
     private String deviceName = "pi1";
     private String productId = "v79fer6hC4";
     private String userId = "432577";
     private String userAccessKey = "uO/Y5Jr5Tj97TSpVaSvMxDlSqkSAsIw/P46fOxhHuZWoovs39BQIL98mAtEbWmml";
     private String queryUrl = "https://iot-api.heclouds.com/thingmodel/query-device-property?product_id=" + productId + "&device_name=" + deviceName;
-
     // MQTT配置（从MainActivity迁移过来）
     private String mqttServerUri = "tcp://mqtts.heclouds.com:1883";
     private String clientId = "pi1";
@@ -60,30 +51,25 @@ public class AttributeDisplayActivity extends AppCompatActivity {
     private String mqttPassword = "version=2018-10-31&res=products%2Fv79fer6hC4&et=1806681600&method=md5&sign=o2KPjpSQeqL8Pb7TiC03Dw%3D%3D";
     private String subscribeTopic = "$sys/v79fer6hC4/pi1/thing/property/post/reply";
     private String publishTopic = "$sys/v79fer6hC4/pi1/thing/property/post";
-
     private MqttAndroidClient mqttAndroidClient;
-    private boolean currentLedState = false; // 记录当前LED状态
-
-    // UI组件
-    private TextView tvPersonStatus, tvLedStatus, tvTemperature, tvHumidity, tvLight, tvSmoke;
-    private CircularProgressBar circularProgressBar;
-    private ImageButton ibtn_settings;
-    private Switch ledSwitch;
+    // UI组件 - 只保留布局中存在的控件
+    private TextView tvTemperature, tvHumidity, tvSmoke, tvLightStatus, ivDoorIcon, ivFanIcon, tvSafetyStatus;
     private Handler handler = new Handler();
     private String token;
-
-    // 属性值缓存
-    private int rs485Value = 0;
-    private int ledValue = 0;
+    // 属性值缓存 - 只保留布局中使用的属性
     private int temperature = 0;
     private int humidity = 0;
-    private int light = 0;
     private int smoke = 0;
+    private int ledState = 0;
+    private int doorState = 0;
+    private int fan = 0;
+    private int rs485 = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.layout_attribute_display);
+
         // 全屏显示
         getWindow().getDecorView().setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE
@@ -95,31 +81,17 @@ public class AttributeDisplayActivity extends AppCompatActivity {
 
         // 初始化UI组件
         initViews();
+        // 设置底部导航栏
+        setupBottomNavigation();
 
         // 生成Token
         try {
             token = generateToken();
         } catch (Exception e) {
             Log.e(TAG, "生成Token失败: " + e.getMessage());
-            Toast.makeText(this, "认证失败", Toast.LENGTH_SHORT).show();
+            showToast("认证失败");
             return;
         }
-
-        // 设置跳转按钮点击事件
-        View.OnClickListener goToMainListener = v -> {
-            Intent intent = new Intent(AttributeDisplayActivity.this, MainActivity.class);
-            startActivityForResult(intent, REQUEST_MAIN_ACTIVITY);
-        };
-
-        // 为存在的跳转按钮设置点击事件
-        ibtn_settings.setOnClickListener(goToMainListener);
-        // btnGoToMain1 和 btnGoToMain2 在布局中不存在，移除相关代码
-
-        // 设置LED开关点击事件
-        ledSwitch.setOnClickListener(v -> {
-            boolean newState = !currentLedState;
-            publishMqttMessage("led", newState ? 1 : 0);
-        });
 
         // 初始化MQTT并连接（从MainActivity迁移过来）
         initMqtt();
@@ -129,14 +101,49 @@ public class AttributeDisplayActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        // 状态文本 - 与布局ID匹配
+        // 状态文本 - 与布局ID匹配，使用findViewById
         tvTemperature = findViewById(R.id.tv_temperature_value);
         tvHumidity = findViewById(R.id.tv_humidity_value);
         tvSmoke = findViewById(R.id.tv_smoke_value);
+        tvLightStatus = findViewById(R.id.tv_light_status);
+        ivDoorIcon = findViewById(R.id.tv_door_status);
+        ivFanIcon = findViewById(R.id.tv_fan_status);
+        tvSafetyStatus = findViewById(R.id.tv_safety_status);
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
+    }
+    // 设置底部导航栏
+    private void setupBottomNavigation() {
+        bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                // 显示首页布局
+                showHomeLayout();
+                return true;
+            } else if (itemId == R.id.nav_control) {
+                // 跳转到控制界面
+                Intent controlIntent = new Intent(AttributeDisplayActivity.this, MainActivity.class);
+                startActivity(controlIntent);
+                return true;
+            } else if (itemId == R.id.nav_history) {
+                // 跳转到历史数据界面
+                Intent historyIntent = new Intent(AttributeDisplayActivity.this, Control.class);
+                startActivity(historyIntent);
+                return true;
+            }
+            return false;
+        });
+        // 设置当前选中的菜单项为"首页"
+        bottomNavigationView.setSelectedItemId(R.id.nav_home);
     }
 
+    // 显示首页布局
+    private void showHomeLayout() {
+        // 当前已经是首页，不需要做任何操作
+        showToast("当前页面");
+    }
     // 初始化MQTT（从MainActivity迁移过来）
     private void initMqtt() {
+        // 使用getApplicationContext()获取上下文
         mqttAndroidClient = new MqttAndroidClient(getApplicationContext(), mqttServerUri, clientId);
         sharedMqttClient = mqttAndroidClient; // 设置共享客户端
 
@@ -172,7 +179,8 @@ public class AttributeDisplayActivity extends AppCompatActivity {
         // 连接MQTT服务器
         connectToMqtt();
     }
-    // 添加静态方法供其他Activity获取MQTT客户端
+
+    // 添加静态方法供其他组件获取MQTT客户端
     public static MqttAndroidClient getSharedMqttClient() {
         return sharedMqttClient;
     }
@@ -234,7 +242,7 @@ public class AttributeDisplayActivity extends AppCompatActivity {
     private void publishMqttMessage(String propertyKey, Object value) {
         if (mqttAndroidClient == null || !mqttAndroidClient.isConnected()) {
             Log.e(TAG, "MQTT未连接，无法发布消息");
-            runOnUiThread(() -> Toast.makeText(this, "MQTT未连接，无法发送消息", Toast.LENGTH_SHORT).show());
+            showToast("MQTT未连接，无法发送消息");
             return;
         }
 
@@ -261,15 +269,13 @@ public class AttributeDisplayActivity extends AppCompatActivity {
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
                     Log.d(TAG, "消息发布成功: " + message);
-                    runOnUiThread(() -> Toast.makeText(AttributeDisplayActivity.this,
-                            "已发送: " + propertyKey + " = " + value, Toast.LENGTH_SHORT).show());
+                    showToast("已发送: " + propertyKey + " = " + value);
                 }
 
                 @Override
                 public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
                     Log.e(TAG, "消息发布失败: " + exception.getMessage());
-                    runOnUiThread(() -> Toast.makeText(AttributeDisplayActivity.this,
-                            "发送失败: " + exception.getMessage(), Toast.LENGTH_SHORT).show());
+                    showToast("发送失败: " + exception.getMessage());
                 }
             });
         } catch (JSONException | MqttException e) {
@@ -284,10 +290,10 @@ public class AttributeDisplayActivity extends AppCompatActivity {
             String code = json.optString("code");
 
             if ("0".equals(code)) {
-                runOnUiThread(() -> Toast.makeText(this, "属性更新成功", Toast.LENGTH_SHORT).show());
+                showToast("属性更新成功");
             } else {
                 String errorMsg = json.optString("msg", "更新失败");
-                runOnUiThread(() -> Toast.makeText(this, errorMsg, Toast.LENGTH_SHORT).show());
+                showToast(errorMsg);
             }
         } catch (JSONException e) {
             Log.e(TAG, "解析MQTT回复失败: " + e.getMessage());
@@ -329,21 +335,22 @@ public class AttributeDisplayActivity extends AppCompatActivity {
                 }
                 br.close();
                 is.close();
-
                 // 解析并展示数据
                 parseAndShowData(response.toString());
             } else {
                 Log.e(TAG, "请求失败，响应码: " + connection.getResponseCode());
-                runOnUiThread(() -> Toast.makeText(this, "数据获取失败", Toast.LENGTH_SHORT).show());
+                showToast("数据获取失败");
             }
         } catch (Exception e) {
             Log.e(TAG, "获取数据异常: " + e.getMessage());
-            runOnUiThread(() -> Toast.makeText(this, "网络异常", Toast.LENGTH_SHORT).show());
+            showToast("网络异常");
         } finally {
             if (connection != null) {
                 connection.disconnect();
             }
         }
+        // 打印原始获取OneNet平台数据
+        Log.d(TAG, "原始获取OneNet平台数据: " + response.toString());
     }
 
     // 解析JSON并展示数据
@@ -353,7 +360,7 @@ public class AttributeDisplayActivity extends AppCompatActivity {
             JSONArray dataArray = jsonObject.optJSONArray("data");
 
             if (dataArray == null || dataArray.length() == 0) {
-                runOnUiThread(() -> Toast.makeText(this, "暂无设备数据", Toast.LENGTH_SHORT).show());
+                showToast("暂无设备数据");
                 return;
             }
 
@@ -370,21 +377,6 @@ public class AttributeDisplayActivity extends AppCompatActivity {
                 }
                 // 根据属性标识更新对应的值
                 switch (identifier) {
-                    case "rs485":
-                        try {
-                            rs485Value = Integer.parseInt(valueStr);
-                        } catch (NumberFormatException e) {
-                            Log.e(TAG, "解析rs485值失败: " + e.getMessage());
-                        }
-                        break;
-                    case "led":
-                        try {
-                            ledValue = Integer.parseInt(valueStr);
-                            currentLedState = ledValue == 1; // 更新LED状态
-                        } catch (NumberFormatException e) {
-                            Log.e(TAG, "解析led值失败: " + e.getMessage());
-                        }
-                        break;
                     case "temp":
                         try {
                             temperature = Integer.parseInt(valueStr);
@@ -399,19 +391,43 @@ public class AttributeDisplayActivity extends AppCompatActivity {
                             Log.e(TAG, "解析湿度值失败: " + e.getMessage());
                         }
                         break;
-                    case "light":
-                        try {
-                            light = Integer.parseInt(valueStr);
-                        } catch (NumberFormatException e) {
-                            Log.e(TAG, "解析光照值失败: " + e.getMessage());
-                        }
-                        break;
                     case "smoke":
                         try {
                             smoke = Integer.parseInt(valueStr);
                         } catch (NumberFormatException e) {
                             Log.e(TAG, "解析烟雾值失败: " + e.getMessage());
                         }
+                        break;
+                    case "led":
+                        try {
+                            ledState = Integer.parseInt(valueStr);
+                        } catch (NumberFormatException e) {
+                            Log.e(TAG, "解析LED状态值失败: " + e.getMessage());
+                        }
+                        break;
+                    case "kaiguan":
+                        try {
+                            doorState = Integer.parseInt(valueStr);
+                        } catch (NumberFormatException e) {
+                            Log.e(TAG, "解析门状态值失败: " + e.getMessage());
+                        }
+                        break;
+                    case "fan":
+                        try {
+                            fan = Integer.parseInt(valueStr);
+                        } catch (NumberFormatException e) {
+                            Log.e(TAG, "解析风扇状态值失败: " + e.getMessage());
+                        }
+                        break;
+                    case "rs485":
+                        try {
+                            rs485 = Integer.parseInt(valueStr);
+                        } catch (NumberFormatException e) {
+                            Log.e(TAG, "解析RS485状态值失败: " + e.getMessage());
+                        }
+                        break;
+                    default:
+                        Log.d(TAG, "忽略未使用的属性: " + identifier);
                         break;
                 }
             }
@@ -421,27 +437,33 @@ public class AttributeDisplayActivity extends AppCompatActivity {
 
         } catch (JSONException e) {
             Log.e(TAG, "解析JSON失败: " + e.getMessage());
-            runOnUiThread(() -> Toast.makeText(this, "数据解析失败", Toast.LENGTH_SHORT).show());
+            showToast("数据解析失败");
         }
     }
 
-    // 更新UI显示
+    // 更新UI显示 - 只更新布局中存在的控件
     private void updateUI() {
-        // 更新RS485状态(有人/无人)
-        tvPersonStatus.setText(rs485Value == 1 ? "有人" : "无人");
-
-        // 更新LED状态和开关
-        tvLedStatus.setText(currentLedState ? "灯光已开" : "灯光已关");
-        ledSwitch.setChecked(currentLedState); // 同步开关状态
-
-        // 更新温度值及进度条
+        // 更新温度值
         tvTemperature.setText(String.valueOf(temperature));
-        circularProgressBar.setProgressWithAnimation(temperature, 1000L);
-
-        // 更新其他属性值
+        // 更新湿度值
         tvHumidity.setText(String.valueOf(humidity));
-        tvLight.setText(String.valueOf(light));
+        // 更新烟雾值
         tvSmoke.setText(String.valueOf(smoke));
+        // 更新LED状态
+        tvLightStatus.setText(ledState == 1 ? "已开启" : "已关闭");
+        tvLightStatus.setTextColor(ledState == 1 ? Color.parseColor("#10B981") : Color.parseColor("#1F2937"));
+        tvLightStatus.setBackgroundResource(ledState == 1 ? R.drawable.yuanjiao2 : R.drawable.yuanjiao1);
+        // 更新门状态
+        ivDoorIcon.setText(doorState == 1 ? "已开启" : "已关闭");
+        ivDoorIcon.setTextColor(doorState == 1 ? Color.parseColor("#10B981") : Color.parseColor("#1F2937"));
+        ivDoorIcon.setBackgroundResource(doorState == 1 ? R.drawable.yuanjiao2 : R.drawable.yuanjiao1);
+        // 更新风扇状态
+        ivFanIcon.setText(fan == 1 ? "已开启" : "已关闭");
+        ivFanIcon.setTextColor(fan == 1 ? Color.parseColor("#10B981") : Color.parseColor("#1F2937"));
+        ivFanIcon.setBackgroundResource(fan == 1 ? R.drawable.yuanjiao2 : R.drawable.yuanjiao1);
+        // 更新RS485状态
+        tvSafetyStatus.setText(rs485 == 1 ? "异常" : "安全");
+        tvSafetyStatus.setTextColor(rs485 == 1 ? Color.parseColor("#EF4444") : Color.parseColor("#000000"));
     }
 
     // 生成认证Token
@@ -453,17 +475,13 @@ public class AttributeDisplayActivity extends AppCompatActivity {
         return TokenUtil.assembleToken(version, resourceName, expirationTime, signatureMethod, userAccessKey);
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_MAIN_ACTIVITY && resultCode == RESULT_OK) {
-            // 从MainActivity返回后刷新数据
-            new Thread(() -> getOnenetData()).start();
-        }
+    // 显示Toast消息的辅助方法
+    private void showToast(String message) {
+        runOnUiThread(() -> Toast.makeText(AttributeDisplayActivity.this, message, Toast.LENGTH_SHORT).show());
     }
 
     @Override
-    protected void onDestroy() {
+    public void onDestroy() {
         super.onDestroy();
         // 停止刷新任务
         handler.removeCallbacksAndMessages(null);

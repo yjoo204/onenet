@@ -14,10 +14,10 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
-import android.widget.SeekBar;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
@@ -37,8 +37,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
@@ -47,18 +45,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.net.ssl.HttpsURLConnection;
-import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.components.XAxis;
-import com.github.mikephil.charting.components.YAxis;
-import com.github.mikephil.charting.data.Entry;
-import com.github.mikephil.charting.data.LineData;
-import com.github.mikephil.charting.data.LineDataSet;
-import com.github.mikephil.charting.formatter.ValueFormatter;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "OneNetDemo";
@@ -99,8 +85,7 @@ public class MainActivity extends AppCompatActivity {
     private EditText historyIdentifierEt; // 新增：历史数据标识符输入框
     private Button sendPropertyBtn,historyDataBtn;
     private ImageButton Return;
-    private LineChart historyChart; // 新增：折线图
-
+    private BottomNavigationView bottomNavigationView;
     // 用于缓存属性视图，实现更新功能
     private Map<String, TextView> propertyViews = new HashMap<>();
 
@@ -117,7 +102,6 @@ public class MainActivity extends AppCompatActivity {
                         | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                         | View.SYSTEM_UI_FLAG_FULLSCREEN
                         | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-
         // 初始化UI组件
         scrollView = findViewById(R.id.scroll_view);
         contentLayout = findViewById(R.id.content_layout);
@@ -126,21 +110,14 @@ public class MainActivity extends AppCompatActivity {
         sendPropertyBtn = findViewById(R.id.btn_send_property);
         historyDataBtn = findViewById(R.id.btn_history_data); // 初始化历史数据按钮
         historyIdentifierEt = findViewById(R.id.et_history_identifier); // 初始化标识符输入框
-        historyChart = findViewById(R.id.chart_history); // 初始化图表
         Return = findViewById(R.id.Return);
+
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
+        setupBottomNavigation();
+
         Return.setOnClickListener(v -> {
             finish();
         });
-
-
-
-        // 初始化图表
-        setupChart();
-
-        // 初始化通用值调节组件
-//        valueSeekBar = findViewById(R.id.seekBar);
-
-
 
         // 设置发送属性按钮监听
         sendPropertyBtn.setOnClickListener(v -> sendCustomProperty());
@@ -182,40 +159,36 @@ public class MainActivity extends AppCompatActivity {
         startRefreshTask();
     }
 
-    // 初始化图表配置
-    private void setupChart() {
-        // 禁用图表描述
-        historyChart.getDescription().setEnabled(false);
-
-        // 设置触摸交互
-        historyChart.setTouchEnabled(true);
-        historyChart.setDragEnabled(true);
-        historyChart.setScaleEnabled(true);
-        historyChart.setPinchZoom(true);
-
-        // 设置X轴 - 修复时间戳问题
-        XAxis xAxis = historyChart.getXAxis();
-        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        xAxis.setGranularity(1f);
-        xAxis.setValueFormatter(new ValueFormatter() {
-            @Override
-            public String getFormattedValue(float value) {
-                // 显示相对时间（小时）
-                return String.format(Locale.getDefault(), "%.1fh", value);
+    private void setupBottomNavigation() {
+        bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                // 跳转到首页
+                Intent homeIntent = new Intent(MainActivity.this, AttributeDisplayActivity.class);
+                startActivity(homeIntent);
+                finish(); // 关闭当前Activity
+                return true;
+            } else if (itemId == R.id.nav_control) {
+                // 当前已经是控制界面，不需要跳转
+                showToast("当前页面");
+                return true;
+            } else if (itemId == R.id.nav_history) {
+                // 当前已经是历史数据界面，不需要跳转
+                showToast("当前页面");
+                return true;
             }
+            return false;
         });
 
-        // 设置Y轴
-        YAxis leftAxis = historyChart.getAxisLeft();
-        leftAxis.setAxisMinimum(0f);
-
-        YAxis rightAxis = historyChart.getAxisRight();
-        rightAxis.setEnabled(false);
-
-        // 设置空数据提示
-        historyChart.setNoDataText("暂无历史数据");
-        historyChart.setNoDataTextColor(getResources().getColor(R.color.design_default_color_secondary));
+        // 设置当前选中的菜单项为"控制"或"历史"
+        bottomNavigationView.setSelectedItemId(R.id.nav_control);
     }
+
+    // 显示Toast消息
+    private void showToast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
 
     // 发送自定义属性
     private void sendCustomProperty() {
@@ -740,7 +713,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // 解析并展示历史数据
-    // 替换原parseAndShowHistoryData方法
     private void parseAndShowHistoryData(String json) {
         try {
             JSONObject jsonObject = new JSONObject(json);
@@ -758,96 +730,10 @@ public class MainActivity extends AppCompatActivity {
             if (dataArray == null || dataArray.length() == 0) {
                 runOnUiThread(() -> {
                     Toast.makeText(this, "暂无历史数据", Toast.LENGTH_SHORT).show();
-                    historyChart.clear();
-                    historyChart.invalidate();
                 });
                 return;
             }
 
-            // 1. 解析数据并存储为Entry列表（X轴为时间戳，Y轴为数值）
-            List<Entry> entries = new ArrayList<>();
-            for (int i = 0; i < dataArray.length(); i++) {
-                try {
-                    JSONObject item = dataArray.getJSONObject(i);
-                    long time = item.optLong("time");
-                    String valueStr = item.optString("value");
-
-                    // 过滤无效数据
-                    if (time <= 0) {
-                        Log.w(TAG, "无效时间戳: " + time);
-                        continue;
-                    }
-
-                    float value = Float.parseFloat(valueStr);
-                    entries.add(new Entry(time, value)); // X轴直接使用时间戳
-                } catch (NumberFormatException e) {
-                    Log.e(TAG, "数值解析失败: " + e.getMessage());
-                } catch (JSONException e) {
-                    Log.e(TAG, "JSON解析失败: " + e.getMessage());
-                }
-            }
-
-            // 2. 关键修复：确保数据按时间戳正序排列
-            if (entries.size() > 1) {
-                entries.sort((a, b) -> Long.compare((long) a.getX(), (long) b.getX()));
-            }
-
-            // 3. 在主线程更新图表
-            runOnUiThread(() -> {
-                if (entries.isEmpty()) {
-                    historyChart.clear();
-                    historyChart.invalidate();
-                    Toast.makeText(this, "没有有效数据可显示", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                // 4. 修复X轴范围计算（确保min <= max）
-                long minTime = (long) entries.get(0).getX();
-                long maxTime = (long) entries.get(entries.size() - 1).getX();
-
-                // 防止X轴范围为负数（关键修复）
-                if (minTime > maxTime) {
-                    long temp = minTime;
-                    minTime = maxTime;
-                    maxTime = temp;
-                }
-
-                // 5. 配置数据集
-                LineDataSet dataSet = new LineDataSet(entries, "历史数据");
-                dataSet.setColor(getResources().getColor(R.color.design_default_color_primary));
-                dataSet.setCircleColor(getResources().getColor(R.color.design_default_color_primary));
-                dataSet.setLineWidth(2f);
-                dataSet.setCircleRadius(4f);
-                dataSet.setDrawValues(false); // 禁用数值标签，减少渲染压力
-                dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER); // 平滑曲线，可选
-
-                // 6. 配置X轴显示时间
-                XAxis xAxis = historyChart.getXAxis();
-                xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-                xAxis.setGranularity(3600000f); // 间隔1小时（毫秒）
-                xAxis.setLabelRotationAngle(-45);
-                xAxis.setValueFormatter(new ValueFormatter() {
-                    @Override
-                    public String getFormattedValue(float value) {
-                        // 将时间戳转换为"HH:mm"格式
-                        return new SimpleDateFormat("HH:mm", Locale.getDefault())
-                                .format(new Date((long) value));
-                    }
-                });
-                xAxis.setAxisMinimum(minTime);
-                xAxis.setAxisMaximum(maxTime);
-
-                // 7. 配置Y轴
-                YAxis leftAxis = historyChart.getAxisLeft();
-                leftAxis.setAxisMinimum(0f); // 根据数据范围动态调整
-                historyChart.getAxisRight().setEnabled(false);
-
-                // 8. 设置数据并刷新图表
-                historyChart.setData(new LineData(dataSet));
-                historyChart.invalidate(); // 刷新图表
-
-                Toast.makeText(this, "加载成功，共" + entries.size() + "条数据", Toast.LENGTH_SHORT).show();
-            });
 
         } catch (JSONException e) {
             Log.e(TAG, "解析历史数据失败: " + e.getMessage());

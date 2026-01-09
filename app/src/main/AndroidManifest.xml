@@ -19,8 +19,7 @@
         <service android:name="org.eclipse.paho.android.service.MqttService" />
         <activity
             android:name=".AttributeDisplayActivity"
-            android:exported="true"
-            tools:ignore="Instantiatable">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -28,6 +27,8 @@
         </activity>
         <activity
             android:name=".MainActivity"
+            android:exported="false" />
+        <activity android:name=".Control"
             android:exported="false" />
     </application>
 
