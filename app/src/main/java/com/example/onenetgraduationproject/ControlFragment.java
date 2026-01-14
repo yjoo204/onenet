@@ -1,0 +1,224 @@
+package com.example.onenetgraduationproject;
+
+import static com.example.onenetgraduationproject.HomeFragment.deviceName;
+import static com.example.onenetgraduationproject.HomeFragment.productId;
+import static com.example.onenetgraduationproject.HomeFragment.token;
+
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
+import androidx.fragment.app.Fragment;
+import org.json.JSONException;
+import org.json.JSONObject;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import javax.net.ssl.HttpsURLConnection;
+
+public class ControlFragment extends Fragment {
+    private static final String TAG = "ControlFragment";
+
+    // MQTT配置
+    //private String publishTopic = "$sys/v79fer6hC4/pi1/thing/property/post";
+    private String setDevicePropertyUrl = "https://iot-api.heclouds.com/thingmodel/set-device-property";
+    // UI组件
+    private EditText etPropertyKey;
+    private EditText etPropertyValue;
+    private Button btnSendProperty;
+
+    public ControlFragment() {
+        // Required empty public constructor
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        // 全屏显示
+        getActivity().getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+
+        // Inflate the layout for this fragment
+        View view = inflater.inflate(R.layout.fragment_control, container, false);
+
+        // 初始化UI组件和逻辑
+        initViews(view);
+
+        return view;
+    }
+
+    private void initViews(View view) {
+        // 初始化UI组件
+        etPropertyKey = view.findViewById(R.id.et_property_key);
+        etPropertyValue = view.findViewById(R.id.et_property_value);
+        btnSendProperty = view.findViewById(R.id.btn_send_property);
+
+        // 设置按钮点击事件
+        btnSendProperty.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendProperty();
+            }
+        });
+    }
+
+    private void sendProperty() {
+        String propertyKey = etPropertyKey.getText().toString().trim();
+        String propertyValue = etPropertyValue.getText().toString().trim();
+
+        // 验证输入
+        if (propertyKey.isEmpty()) {
+            showToast("请输入属性名");
+            return;
+        }
+
+        if (propertyValue.isEmpty()) {
+            showToast("请输入属性值");
+            return;
+        }
+
+        // 调用setDeviceProperty方法，传递正确的参数
+        setDeviceProperty(propertyKey, propertyValue);
+    }
+
+    // 显示Toast消息
+    private void showToast(String message) {
+        if (getActivity() != null) {
+            Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show();
+        }
+    }
+    /**********************************************
+     * 设置设备属性
+     * @param propertyKey 属性名
+     * @param propertyValue 属性值
+    // 设置设备属性URL
+    //POST http(s)://iot-api.heclouds.com/thingmodel/set-device-property
+    //Content-type: application/json
+    //{
+    //    "product_id": "9MaNe52pNO",
+    //    "device_name": "no001",
+    //    "params": {
+    //        "switch": true,           // bool
+    //        "text": "hello",          // string
+    //        "humidity": 12 ,          // int32
+    //        "number": 1564448722123,        // int64
+    //        "temperature": 30.2             // float
+    //        "lng": 3.1234567890123456789,   // double
+    //        "type": 1,                      // enum
+    //        "error": 256,                   // bitmap
+    //        "event":  {                     // struct
+    //            "a": 1,
+    //            "b": true
+    //        }
+    //    }
+    //}
+    ********************************************************/
+    private void setDeviceProperty(String propertyKey, Object propertyValue) {
+        // 确保网络请求在子线程中执行
+        new Thread(() -> {
+            HttpsURLConnection connection = null;
+            try {
+                // 尝试将字符串类型的propertyValue转换为合适的数值类型
+                Object finalValue = propertyValue;
+                if (propertyValue instanceof String) {
+                    String stringValue = (String) propertyValue;
+                    try {
+                        // 尝试解析为数字
+                        if (stringValue.contains(".")) {
+                            finalValue = Double.parseDouble(stringValue);
+                        } else {
+                            finalValue = Integer.parseInt(stringValue);
+                        }
+                    } catch (NumberFormatException e) {
+                        // 解析失败，保持原字符串类型
+                        Log.d(TAG, "属性值无法解析为数字，作为字符串处理: " + stringValue);
+                    }
+                }
+
+                // 创建URL对象
+                URL url = new URL(setDevicePropertyUrl);
+                connection = (HttpsURLConnection) url.openConnection();
+
+                // 设置请求方法为POST
+                connection.setRequestMethod("POST");
+                connection.setConnectTimeout(5000);
+                connection.setReadTimeout(5000);
+                connection.setRequestProperty("Content-Type", "application/json");
+                connection.setRequestProperty("authorization", token);
+                connection.setDoOutput(true);
+
+                // 构建JSON请求体
+                JSONObject requestBody = new JSONObject();
+                requestBody.put("product_id", productId);
+                requestBody.put("device_name", deviceName);
+                JSONObject params = new JSONObject();
+                params.put(propertyKey, finalValue);
+
+                requestBody.put("params", params);
+
+                // 发送请求体
+                OutputStream outputStream = connection.getOutputStream();
+                outputStream.write(requestBody.toString().getBytes(StandardCharsets.UTF_8));
+                outputStream.flush();
+                outputStream.close();
+                // 打印请求体
+                Log.d(TAG, "设置设备属性请求体: " + requestBody.toString());
+                // 获取响应码
+                int responseCode = connection.getResponseCode();
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    // 读取响应内容
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+                    reader.close();
+
+                    // 处理响应数据
+                    String responseString = response.toString();
+                    Log.d(TAG, "设置设备属性成功，响应: " + responseString);
+
+                    // 在主线程显示成功信息
+                    Object finalValue1 = finalValue;
+                    getActivity().runOnUiThread(() -> {
+                        Toast.makeText(getActivity(), "设置设备属性成功", Toast.LENGTH_SHORT).show();
+                        Log.d(TAG, "设置设备属性成功: " + propertyKey + " = " + finalValue1);
+                    });
+                } else {
+                    // 请求失败，读取错误信息
+                    BufferedReader errorReader = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
+                    StringBuilder errorResponse = new StringBuilder();
+                    String line;
+                    while ((line = errorReader.readLine()) != null) {
+                        errorResponse.append(line);
+                    }
+                    errorReader.close();
+
+                    Log.e(TAG, "设置设备属性失败，响应码: " + responseCode + "，错误信息: " + errorResponse.toString());
+
+                    // 在主线程显示失败信息
+                    getActivity().runOnUiThread(() -> {
+                        Toast.makeText(getActivity(), "设置设备属性失败，错误码: " + responseCode, Toast.LENGTH_SHORT).show();
+                    });
+                }
+            } catch (IOException | JSONException e) {
+                Log.e(TAG, "设置设备属性异常: " + e.getMessage());
+                // 在主线程显示异常信息
+                getActivity().runOnUiThread(() -> {
+                    Toast.makeText(getActivity(), "设置设备属性异常: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            } finally {
+                if (connection != null) {
+                    connection.disconnect();
+                }
+            }
+        }).start();
+    }
+}
