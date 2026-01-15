@@ -1,5 +1,8 @@
 package com.example.onenetgraduationproject;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -13,14 +16,6 @@ import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
 
-import org.eclipse.paho.android.service.MqttAndroidClient;
-import org.eclipse.paho.client.mqttv3.IMqttActionListener;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.IMqttToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -35,35 +30,32 @@ import java.security.NoSuchAlgorithmException;
 import java.io.UnsupportedEncodingException;
 
 import javax.net.ssl.HttpsURLConnection;
-import android.content.Context;
 
 public class HomeFragment extends Fragment {
     private static final String TAG = "HomeFragment";
-    // OneNet平台配置
-    static String deviceName = "pi1";
-    public static String productId = "v79fer6hC4";
-    private String userId = "432577";
-    private String userAccessKey = "uO/Y5Jr5Tj97TSpVaSvMxDlSqkSAsIw/P46fOxhHuZWoovs39BQIL98mAtEbWmml";
-    private String queryUrl = "https://iot-api.heclouds.com/thingmodel/query-device-property?product_id=" + productId + "&device_name=" + deviceName;
-    private MqttAndroidClient mqttAndroidClient;
+    // 定义SharedPreferences的文件名
+    private static final String PREF_NAME = "OneNetSettings";
+
+    // OneNet平台配置（完全从用户输入获取）
+    static String deviceName;
+    public static String productId;
+    private String userId;
+    private String userAccessKey;
+    private String queryUrl;
 
     // UI组件
-    private TextView tvTemperature, tvHumidity, tvSmoke, tvLightStatus, ivDoorIcon, ivFanIcon, tvSafetyStatus;
-    // 绑定主线程Looper，确保消息分发稳定
+    private TextView tvAllData,tv_title;
+
     private Handler handler = new Handler(Looper.getMainLooper());
     static String token;
 
-    // 属性值缓存
-    private int temperature = 0;
-    private int humidity = 0;
-    private int smoke = 0;
-    private int ledState = 0;
-    private int doorState = 0;
-    private int fan = 0;
-    private int rs485 = 0;
-
     // 刷新任务的Runnable
     private Runnable refreshRunnable;
+
+    // 点击计数相关变量
+    private int clickCount = 0; // 记录点击次数
+    private long lastClickTime = 0; // 记录上次点击时间
+    private static final long CLICK_TIME_INTERVAL = 500; // 点击时间间隔阈值（毫秒）
 
     public HomeFragment() {
     }
@@ -74,29 +66,24 @@ public class HomeFragment extends Fragment {
 
         // 初始化UI组件
         initViews(view);
+        loadSavedData();
 
-        // 生成Token
-        try {
-            token = generateToken();
-        } catch (Exception e) {
-            Log.e(TAG, "生成Token失败: " + e.getMessage());
-            showToast("认证失败");
-            return view;
-        }
         return view;
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        // 启动或恢复刷新任务
-        startRefreshTask();
-        Log.d(TAG, "HomeFragment 可见，启动数据刷新任务");
+        loadSavedData();
     }
 
     @Override
     public void onPause() {
         super.onPause();
+        // 停止刷新任务
+        if (refreshRunnable != null) {
+            handler.removeCallbacks(refreshRunnable);
+        }
     }
 
     @Override
@@ -106,13 +93,97 @@ public class HomeFragment extends Fragment {
     }
 
     private void initViews(View view) {
-        tvTemperature = view.findViewById(R.id.tv_temperature_value);
-        tvHumidity = view.findViewById(R.id.tv_humidity_value);
-        tvSmoke = view.findViewById(R.id.tv_smoke_value);
-        tvLightStatus = view.findViewById(R.id.tv_light_status);
-        ivDoorIcon = view.findViewById(R.id.tv_door_status);
-        ivFanIcon = view.findViewById(R.id.tv_fan_status);
-        tvSafetyStatus = view.findViewById(R.id.tv_safety_status);
+        tvAllData = view.findViewById(R.id.tv_all_data);
+        tv_title = view.findViewById(R.id.tv_title);
+        // 点击事件
+        tv_title.setOnClickListener(v -> {
+            // 计算当前时间与上次点击时间的间隔
+            long currentTime = System.currentTimeMillis();
+
+            // 如果点击间隔在阈值内，点击次数加一
+            if (currentTime - lastClickTime < CLICK_TIME_INTERVAL) {
+                clickCount++;
+            } else {
+                // 超过时间间隔，重置点击次数
+                clickCount = 1;
+            }
+
+            // 更新上次点击时间
+            lastClickTime = currentTime;
+
+            // 点击三次时执行跳转
+            if (clickCount == 3) {
+                // 重置点击计数
+                clickCount = 0;
+
+                // 切换到settings界面
+                Intent intent = new Intent(getActivity(), Settings.class);
+                startActivity(intent);
+            }
+        });
+    }
+
+    // 从SharedPreferences加载保存的数据（用户输入的配置）
+    private void loadSavedData() {
+        // 获取SharedPreferences实例
+        SharedPreferences sharedPreferences = getActivity().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+
+        // 完全从用户输入获取，不使用任何硬编码的默认值
+        deviceName = sharedPreferences.getString("deviceName", "");
+        productId = sharedPreferences.getString("productId", "");
+        userId = sharedPreferences.getString("userId", "");
+        userAccessKey = sharedPreferences.getString("userAccessKey", "");
+
+        // 检查是否所有必要的配置都已设置
+        if (isConfigurationComplete()) {
+            // 配置完整，启动刷新任务
+            startDataRefresh();
+        } else {
+            // 配置不完整，提示用户去设置界面
+            showConfigurationPrompt();
+        }
+    }
+
+    // 检查配置是否完整
+    private boolean isConfigurationComplete() {
+        return deviceName != null && !deviceName.isEmpty() &&
+                productId != null && !productId.isEmpty() &&
+                userId != null && !userId.isEmpty() &&
+                userAccessKey != null && !userAccessKey.isEmpty();
+    }
+
+    // 启动数据刷新（仅当配置完整时）
+    private void startDataRefresh() {
+        // 构建查询URL
+        queryUrl = "https://iot-api.heclouds.com/thingmodel/query-device-property?product_id=" + productId + "&device_name=" + deviceName;
+
+        // 生成Token
+        try {
+            token = generateToken();
+        } catch (Exception e) {
+            Log.e(TAG, "生成Token失败: " + e.getMessage());
+            showToast("认证失败");
+            return;
+        }
+
+        // 启动刷新任务
+        startRefreshTask();
+    }
+
+    // 显示配置提示
+    private void showConfigurationPrompt() {
+        // 停止正在运行的刷新任务
+        if (refreshRunnable != null) {
+            handler.removeCallbacks(refreshRunnable);
+        }
+
+        // 更新UI显示配置提示
+//        if (getActivity() != null) {
+//            getActivity().runOnUiThread(() -> {
+//                tvAllData.setText("请点击标题三次进入设置界面，配置OneNet平台信息");
+//                tvAllData.setTextColor(Color.RED);
+//            });
+//        }
     }
 
     // 启动定时刷新任务
@@ -134,15 +205,14 @@ public class HomeFragment extends Fragment {
         Log.d(TAG, "数据刷新任务已启动");
     }
 
-    //保留该方法，不再调用
-    private void pauseRefreshTask() {
-        if (refreshRunnable != null) {
-            handler.removeCallbacks(refreshRunnable);
-        }
-    }
-
     // 获取OneNet平台数据
     private void getOnenetData() {
+        // 再次检查配置是否完整（防止在任务运行过程中配置被删除）
+        if (!isConfigurationComplete()) {
+            showConfigurationPrompt();
+            return;
+        }
+
         HttpsURLConnection connection = null;
         StringBuilder response = new StringBuilder();
         try {
@@ -152,7 +222,7 @@ public class HomeFragment extends Fragment {
             connection.setReadTimeout(3000);
             connection.setRequestMethod("GET");
             connection.setRequestProperty("authorization", token);
-            Log.e(TAG,token);
+            Log.e(TAG, token);
 
             if (connection.getResponseCode() == HttpsURLConnection.HTTP_OK) {
                 InputStream is = connection.getInputStream();
@@ -191,60 +261,36 @@ public class HomeFragment extends Fragment {
                 return;
             }
 
+            // 构建数据显示字符串
+            StringBuilder dataBuilder = new StringBuilder();
+
+            // 遍历所有数据项，直接打印identifier和value
             for (int i = 0; i < dataArray.length(); i++) {
                 JSONObject item = dataArray.getJSONObject(i);
                 String identifier = item.optString("identifier");
                 String valueStr = item.optString("value");
 
-                if (valueStr == null || valueStr.isEmpty()) {
-                    Log.w(TAG, "属性 " + identifier + " 的值为空，跳过解析");
-                    continue;
-                }
-                if ("temp".equals(identifier)) {
-                    temperature = Integer.parseInt(valueStr);
-                } else if ("hum".equals(identifier)) {
-                    humidity = Integer.parseInt(valueStr);
-                } else if ("smoke".equals(identifier)) {
-                    smoke = Integer.parseInt(valueStr);
-                } else if ("led".equals(identifier)) {
-                    ledState = Integer.parseInt(valueStr);
-                } else if ("kaiguan".equals(identifier)) {
-                    doorState = Integer.parseInt(valueStr);
-                } else if ("fan".equals(identifier)) {
-                    fan = Integer.parseInt(valueStr);
-                } else if ("rs485".equals(identifier)) {
-                    rs485 = Integer.parseInt(valueStr);
+                if (valueStr != null && !valueStr.isEmpty()) {
+                    Log.d(TAG, identifier + ": " + valueStr);
+                    dataBuilder.append(identifier).append(": " ).append(valueStr).append("\n");
                 } else {
-                    Log.d(TAG, "忽略未使用的属性: " + identifier);
+                    Log.w(TAG, "属性 " + identifier + " 的值为空");
+                    dataBuilder.append(identifier).append(": 空值\n");
                 }
             }
 
+            // 在UI线程更新TextView
             if (getActivity() != null) {
-                getActivity().runOnUiThread(this::updateUI);
+                getActivity().runOnUiThread(() -> {
+                    tvAllData.setText(dataBuilder.toString());
+                    tvAllData.setTextColor(Color.BLACK); // 恢复正常颜色
+                });
             }
 
-        } catch (JSONException | NumberFormatException e) {
+        } catch (JSONException e) {
             Log.e(TAG, "解析数据失败: " + e.getMessage());
             showToast("数据解析失败");
         }
-    }
-
-    // 更新UI显示
-    private void updateUI() {
-        tvTemperature.setText(String.valueOf(temperature));
-        tvHumidity.setText(String.valueOf(humidity));
-        tvSmoke.setText(String.valueOf(smoke));
-        tvLightStatus.setText(ledState == 1 ? "已开启" : "已关闭");
-        tvLightStatus.setTextColor(ledState == 1 ? Color.parseColor("#10B981") : Color.parseColor("#1F2937"));
-        tvLightStatus.setBackgroundResource(ledState == 1 ? R.drawable.yuanjiao2 : R.drawable.yuanjiao1);
-        ivDoorIcon.setText(doorState == 1 ? "已开启" : "已关闭");
-        ivDoorIcon.setTextColor(doorState == 1 ? Color.parseColor("#10B981") : Color.parseColor("#1F2937"));
-        ivDoorIcon.setBackgroundResource(doorState == 1 ? R.drawable.yuanjiao2 : R.drawable.yuanjiao1);
-        ivFanIcon.setText(fan == 1 ? "已开启" : "已关闭");
-        ivFanIcon.setTextColor(fan == 1 ? Color.parseColor("#10B981") : Color.parseColor("#1F2937"));
-        ivFanIcon.setBackgroundResource(fan == 1 ? R.drawable.yuanjiao2 : R.drawable.yuanjiao1);
-        tvSafetyStatus.setText(rs485 == 1 ? "异常" : "安全");
-        tvSafetyStatus.setTextColor(rs485 == 1 ? Color.parseColor("#EF4444") : Color.parseColor("#000000"));
     }
 
     // 生成认证Token
