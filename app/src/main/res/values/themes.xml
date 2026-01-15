@@ -9,5 +9,16 @@
         <item name="android:windowBackground">@color/white</item>
         <!-- 关闭强制深色模式（避免浅色内容变深色） -->
         <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
+
+        <!-- 添加全屏相关属性 -->
+        <item name="android:windowFullscreen">true</item> <!-- 设置窗口为全屏 -->
+        <item name="android:windowNoTitle">true</item> <!-- 确保没有标题栏 -->
+        <item name="android:windowContentOverlay">@null</item> <!-- 移除内容覆盖层 -->
+
+        <!-- 隐藏状态栏和导航栏（可选，根据需求） -->
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 </resources>

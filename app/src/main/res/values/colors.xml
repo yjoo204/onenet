@@ -6,6 +6,8 @@
     <color name="primary">#FF6200EE</color>
     <color name="green">#2196F3</color>
     <color name="red">#F44336</color>
+    <color name="my_selected_color">#FF5722</color> <!-- 橙色 -->
+    <color name="my_unselected_color">#BDBDBD</color> <!-- 浅灰色 -->
     <color name="design_default_color_secondary">#00BCD4</color>
     <color name="design_default_color_primary">#2196F3</color> <!-- 主色调 -->
 </resources>

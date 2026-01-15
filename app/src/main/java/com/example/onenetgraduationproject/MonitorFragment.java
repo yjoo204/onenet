@@ -5,60 +5,82 @@ import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
 import static com.example.onenetgraduationproject.HomeFragment.token;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
+
+import com.github.AAChartModel.AAChartCore.AAChartCreator.AAChartModel;
+import com.github.AAChartModel.AAChartCore.AAChartCreator.AAChartView;
+import com.github.AAChartModel.AAChartCore.AAChartCreator.AASeriesElement;
+import com.github.AAChartModel.AAChartCore.AAOptionsModel.AADataLabels;
+import com.github.AAChartModel.AAChartCore.AAOptionsModel.AATitle;
+import com.github.AAChartModel.AAChartCore.AAOptionsModel.AAXAxis;
+import com.github.AAChartModel.AAChartCore.AAOptionsModel.AAYAxis;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
-import android.widget.EditText;
 
 public class MonitorFragment extends Fragment {
-    private View aaChartView;
     private EditText et_history_identifier;
     private Button btn_history_data;
+    private AAChartView aaChartView;
+    private Handler handler;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // 全屏显示
-        getActivity().getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+
 
         View view = inflater.inflate(R.layout.fragment_monitor, container, false);
-        
+
         // 初始化UI组件和逻辑
         initViews(view);
-        
+
         return view;
     }
 
     private void initViews(View view) {
-        aaChartView = view.findViewById(R.id.AAChartView);
         et_history_identifier = view.findViewById(R.id.et_history_identifier);
         btn_history_data = view.findViewById(R.id.btn_history_data);
+        aaChartView = view.findViewById(R.id.AAChartView);
+        handler = new Handler(Looper.getMainLooper());
+
         // 设置按钮点击事件
         btn_history_data.setOnClickListener(v -> {
             // 获取用户输入的标识符
-            String identifier = btn_history_data.getText().toString().trim();
+            String identifier = et_history_identifier.getText().toString().trim();
             if (identifier.isEmpty()) {
                 Toast.makeText(getActivity(), "请输入属性标识符", Toast.LENGTH_SHORT).show();
                 return;
             }
-            // 获取最近24小时的LED历史数据
+            // 获取最近24小时的历史数据
             long endTime = System.currentTimeMillis();
             long startTime = endTime - (24 * 60 * 60 * 1000); // 24小时前
             // 在子线程执行历史数据请求
             new Thread(() -> getHistoryData(identifier, startTime, endTime)).start();
         });
     }
+
     private String getHistoryDataUrl(String identifier, long startTime, long endTime) {
         return "https://iot-api.heclouds.com/thingmodel/query-device-property-history?product_id=" +
                 HomeFragment.productId + "&device_name=" + HomeFragment.deviceName +
@@ -109,8 +131,63 @@ public class MonitorFragment extends Fragment {
         Log.d(TAG, "历史数据响应: " + response);
     }
 
+    private void parseAndShowHistoryData(String json) {
+        try {
+            // 解析JSON响应
+            JSONObject jsonObject = new JSONObject(json);
+            int code = jsonObject.getInt("code");
+            if (code == 0) {
+                JSONObject data = jsonObject.getJSONObject("data");
+                JSONArray list = data.getJSONArray("list");
 
-    private void parseAndShowHistoryData(String string) {
+                // 准备图表数据
+                List<String> xAxisCategories = new ArrayList<>();
+                List<Double> values = new ArrayList<>();
 
+                // 格式化时间
+                SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+
+                // 遍历数据列表
+                for (int i = 0; i < list.length(); i++) {
+                    JSONObject item = list.getJSONObject(i);
+                    long time = item.getLong("time");
+                    double value = Double.parseDouble(item.getString("value"));
+
+                    // 转换时间格式
+                    String formattedTime = sdf.format(new Date(time));
+
+                    // 添加到数据列表
+                    xAxisCategories.add(formattedTime);
+                    values.add(value);
+                }
+
+                // 在主线程更新UI
+                handler.post(() -> {
+                    // 创建图表模型
+                    AAChartModel aaChartModel = new AAChartModel()
+                            .chartType("line")
+                            .title("历史数据趋势图")
+                            .subtitle("过去24小时数据变化")
+                            .backgroundColor("#ffffff")
+                            .dataLabelsEnabled(true)
+                            .categories(xAxisCategories.toArray(new String[0]))
+                            .series(new AASeriesElement[]{
+                                    new AASeriesElement()
+                                            .name(et_history_identifier.getText().toString().trim())
+                                            .data(values.toArray(new Double[0]))
+                            });
+
+                    // 绘制图表
+                    aaChartView.aa_drawChartWithChartModel(aaChartModel);
+                });
+            } else {
+                String msg = jsonObject.getString("msg");
+                Log.e(TAG, "获取历史数据失败: " + msg);
+                handler.post(() -> Toast.makeText(getActivity(), "获取历史数据失败: " + msg, Toast.LENGTH_SHORT).show());
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "解析历史数据异常: " + e.getMessage());
+            handler.post(() -> Toast.makeText(getActivity(), "解析历史数据异常", Toast.LENGTH_SHORT).show());
+        }
     }
 }
