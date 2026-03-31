@@ -75,7 +75,7 @@ public class MonitorFragment extends Fragment {
             }
             // 获取最近24小时的历史数据
             long endTime = System.currentTimeMillis();
-            long startTime = endTime - (24 * 60 * 60 * 1000); // 24小时前
+            long startTime = endTime - (72 * 60 * 60 * 1000); // 24小时前
             // 在子线程执行历史数据请求
             new Thread(() -> getHistoryData(identifier, startTime, endTime)).start();
         });

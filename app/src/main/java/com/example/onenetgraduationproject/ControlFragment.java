@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Switch;
 import android.widget.Toast;
 import androidx.fragment.app.Fragment;
 import org.json.JSONException;
@@ -35,6 +36,17 @@ public class ControlFragment extends Fragment {
     private EditText etPropertyValue;
     private Button btnSendProperty;
 
+    // 新增：设备控制开关
+    private Switch switchBuzzer;
+    private Switch switchFan;
+    private Switch switchLed;
+    private Switch switchKaiguan;
+
+    private EditText etTemperatureLimit;
+    private Button btnSetTemperatureLimit;
+    private EditText etHumidityUpperLimit;
+    private Button btnSetHumidityUpperLimit;
+
     public ControlFragment() {
         // Required empty public constructor
     }
@@ -54,17 +66,90 @@ public class ControlFragment extends Fragment {
     }
 
     private void initViews(View view) {
-        // 初始化UI组件
+        // 初始化原有UI组件
         etPropertyKey = view.findViewById(R.id.et_property_key);
         etPropertyValue = view.findViewById(R.id.et_property_value);
         btnSendProperty = view.findViewById(R.id.btn_send_property);
+        // 初始化阈值设置组件
+        etTemperatureLimit = view.findViewById(R.id.et_temperature_limit);
+        btnSetTemperatureLimit = view.findViewById(R.id.btn_set_temperature_limit);
+        etHumidityUpperLimit = view.findViewById(R.id.et_humidity_upper_limit);
+        btnSetHumidityUpperLimit = view.findViewById(R.id.btn_set_humidity_upper_limit);
 
-        // 设置按钮点击事件
+
+        // 设置原有按钮点击事件
         btnSendProperty.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 sendProperty();
             }
+        });
+
+        // 初始化新增的开关组件
+        switchBuzzer = view.findViewById(R.id.switch_buzzer);
+        switchFan = view.findViewById(R.id.switch_fan);
+        switchLed = view.findViewById(R.id.switch_led);
+        switchKaiguan = view.findViewById(R.id.switch_kaiguan);
+
+        // 设置开关点击事件
+        setupSwitchListeners();
+
+        setupThresholdListeners();
+    }
+
+    // 添加阈值设置监听器
+    private void setupThresholdListeners() {
+        // 温度阈值设置
+        btnSetTemperatureLimit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String temperatureValue = etTemperatureLimit.getText().toString().trim();
+                if (temperatureValue.isEmpty()) {
+                    showToast("请输入温度阈值");
+                    return;
+                }
+                setDeviceProperty("Temperature_Limit", temperatureValue);
+            }
+        });
+
+        // 湿度上限设置
+        btnSetHumidityUpperLimit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String humidityValue = etHumidityUpperLimit.getText().toString().trim();
+                if (humidityValue.isEmpty()) {
+                    showToast("请输入湿度上限");
+                    return;
+                }
+                setDeviceProperty("HumidityUpperLimit", humidityValue);
+            }
+        });
+    }
+
+    // 新增：设置开关监听器
+    private void setupSwitchListeners() {
+        // 蜂鸣器开关
+        switchBuzzer.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            int value = isChecked ? 1 : 0;
+            setDeviceProperty("buzzer", String.valueOf(value));
+        });
+
+        // 风扇开关
+        switchFan.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            int value = isChecked ? 1 : 0;
+            setDeviceProperty("fan", String.valueOf(value));
+        });
+
+        // LED灯开关
+        switchLed.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            int value = isChecked ? 1 : 0;
+            setDeviceProperty("led", String.valueOf(value));
+        });
+
+        // 开关控制
+        switchKaiguan.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            int value = isChecked ? 1 : 0;
+            setDeviceProperty("kaiguan", String.valueOf(value));
         });
     }
 
@@ -93,32 +178,8 @@ public class ControlFragment extends Fragment {
             Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show();
         }
     }
-    /**********************************************
-     * 设置设备属性
-     * @param propertyKey 属性名
-     * @param propertyValue 属性值
-    // 设置设备属性URL
-    //POST http(s)://iot-api.heclouds.com/thingmodel/set-device-property
-    //Content-type: application/json
-    //{
-    //    "product_id": "9MaNe52pNO",
-    //    "device_name": "no001",
-    //    "params": {
-    //        "switch": true,           // bool
-    //        "text": "hello",          // string
-    //        "humidity": 12 ,          // int32
-    //        "number": 1564448722123,        // int64
-    //        "temperature": 30.2             // float
-    //        "lng": 3.1234567890123456789,   // double
-    //        "type": 1,                      // enum
-    //        "error": 256,                   // bitmap
-    //        "event":  {                     // struct
-    //            "a": 1,
-    //            "b": true
-    //        }
-    //    }
-    //}
-    ********************************************************/
+
+    // 设置设备属性方法（保持不变）
     private void setDeviceProperty(String propertyKey, Object propertyValue) {
         // 确保网络请求在子线程中执行
         new Thread(() -> {
@@ -188,7 +249,7 @@ public class ControlFragment extends Fragment {
                     // 在主线程显示成功信息
                     Object finalValue1 = finalValue;
                     getActivity().runOnUiThread(() -> {
-                        Toast.makeText(getActivity(), "设置设备属性成功", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getActivity(), propertyKey + "已" + (finalValue1.equals(1) ? "开启" : "关闭"), Toast.LENGTH_SHORT).show();
                         Log.d(TAG, "设置设备属性成功: " + propertyKey + " = " + finalValue1);
                     });
                 } else {
@@ -206,6 +267,9 @@ public class ControlFragment extends Fragment {
                     // 在主线程显示失败信息
                     getActivity().runOnUiThread(() -> {
                         Toast.makeText(getActivity(), "设置设备属性失败，错误码: " + responseCode, Toast.LENGTH_SHORT).show();
+
+                        // 失败时恢复开关状态
+                        restoreSwitchState(propertyKey);
                     });
                 }
             } catch (IOException | JSONException e) {
@@ -213,6 +277,9 @@ public class ControlFragment extends Fragment {
                 // 在主线程显示异常信息
                 getActivity().runOnUiThread(() -> {
                     Toast.makeText(getActivity(), "设置设备属性异常: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+
+                    // 异常时恢复开关状态
+                    restoreSwitchState((String) propertyValue);
                 });
             } finally {
                 if (connection != null) {
@@ -220,5 +287,27 @@ public class ControlFragment extends Fragment {
                 }
             }
         }).start();
+    }
+
+    // 新增：恢复开关状态（当控制失败时调用）
+    private void restoreSwitchState(String propertyKey) {
+        if (getActivity() == null) return;
+
+        getActivity().runOnUiThread(() -> {
+            switch (propertyKey) {
+                case "buzzer":
+                    switchBuzzer.setChecked(!switchBuzzer.isChecked());
+                    break;
+                case "fan":
+                    switchFan.setChecked(!switchFan.isChecked());
+                    break;
+                case "led":
+                    switchLed.setChecked(!switchLed.isChecked());
+                    break;
+                case "kaiguan":
+                    switchKaiguan.setChecked(!switchKaiguan.isChecked());
+                    break;
+            }
+        });
     }
 }

@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">onenet Graduation project</string>
+    <string-array name="time_ranges">
+        <item>1小时</item>
+        <item>6小时</item>
+        <item>12小时</item>
+        <item>24小时</item>
+        <item>3天</item>
+        <item>7天</item>
+    </string-array>
+
+    <string name="select_time_range">选择查询时间</string>
 </resources>

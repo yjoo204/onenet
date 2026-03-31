@@ -5,7 +5,6 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical">
 
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -38,7 +37,16 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:hint="属性标识符(如:led,temperature)" />
+                android:hint="属性标识符" />
+
+            <Spinner
+                android:id="@+id/sp_time_range"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginLeft="8dp"
+                android:entries="@array/time_ranges"
+                android:prompt="@string/select_time_range" />
 
             <Button
                 android:id="@+id/btn_history_data"
@@ -53,7 +61,6 @@
             android:id="@+id/AAChartView"
             android:layout_width="match_parent"
             android:layout_height="300dp" />
-
 
     </LinearLayout>
 

@@ -51,4 +51,191 @@
         </LinearLayout>
     </LinearLayout>
 
+    <!-- 添加设备控制开关区域 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="快捷控制"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <!-- 蜂鸣器控制 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="蜂鸣器 (buzzer)"
+                android:textSize="16sp" />
+
+            <Switch
+                android:id="@+id/switch_buzzer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textOn="开"
+                android:textOff="关" />
+        </LinearLayout>
+
+        <!-- 风扇控制 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="风扇 (fan)"
+                android:textSize="16sp" />
+
+            <Switch
+                android:id="@+id/switch_fan"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textOn="开"
+                android:textOff="关" />
+        </LinearLayout>
+
+        <!-- LED控制 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="LED灯 (led)"
+                android:textSize="16sp" />
+
+            <Switch
+                android:id="@+id/switch_led"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textOn="开"
+                android:textOff="关" />
+        </LinearLayout>
+
+        <!-- 开关控制 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="开关 (kaiguan)"
+                android:textSize="16sp" />
+
+            <Switch
+                android:id="@+id/switch_kaiguan"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textOn="开"
+                android:textOff="关" />
+        </LinearLayout>
+
+    </LinearLayout>
+    <!-- 添加阈值设置区域 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="阈值设置"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <!-- 温度阈值设置 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:text="温度阈值 (Temperature_Limit)"
+                android:textSize="16sp" />
+
+            <EditText
+                android:id="@+id/et_temperature_limit"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginLeft="8dp"
+                android:hint="输入温度值"
+                android:inputType="numberDecimal" />
+
+            <Button
+                android:id="@+id/btn_set_temperature_limit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="8dp"
+                android:text="设置" />
+        </LinearLayout>
+
+        <!-- 湿度上限设置 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:text="湿度阈值 (HumidityUpperLimit)"
+                android:textSize="16sp" />
+
+            <EditText
+                android:id="@+id/et_humidity_upper_limit"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginLeft="8dp"
+                android:hint="输入湿度值"
+                android:inputType="numberDecimal" />
+
+            <Button
+                android:id="@+id/btn_set_humidity_upper_limit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="8dp"
+                android:text="设置" />
+        </LinearLayout>
+    </LinearLayout>
 </LinearLayout>

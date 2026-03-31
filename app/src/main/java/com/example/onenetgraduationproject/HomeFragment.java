@@ -1,5 +1,8 @@
 package com.example.onenetgraduationproject;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -49,6 +52,7 @@ public class HomeFragment extends Fragment {
 
     // UI组件
     private TextView tvTemperature, tvHumidity, tvSmoke, tvLightStatus, ivDoorIcon, ivFanIcon, tvSafetyStatus;
+    private TextView tvSwitchStorage; // 新增：切换/退出登录按钮
     // 绑定主线程Looper，确保消息分发稳定
     private Handler handler = new Handler(Looper.getMainLooper());
     static String token;
@@ -62,6 +66,9 @@ public class HomeFragment extends Fragment {
     private int fan = 0;
     private int rs485 = 0;
 
+    // 温度异常对话框标记，避免重复显示
+    private boolean isTemperatureDialogShowing = false;
+
     // 刷新任务的Runnable
     private Runnable refreshRunnable;
 
@@ -74,6 +81,9 @@ public class HomeFragment extends Fragment {
 
         // 初始化UI组件
         initViews(view);
+
+        // 设置切换/退出登录按钮点击事件
+        setupSwitchStorageButton();
 
         // 生成Token
         try {
@@ -113,6 +123,42 @@ public class HomeFragment extends Fragment {
         ivDoorIcon = view.findViewById(R.id.tv_door_status);
         ivFanIcon = view.findViewById(R.id.tv_fan_status);
         tvSafetyStatus = view.findViewById(R.id.tv_safety_status);
+        tvSwitchStorage = view.findViewById(R.id.tv_switch_storage); // 新增：初始化切换/退出登录按钮
+    }
+
+    // 新增：设置切换/退出登录按钮功能
+    private void setupSwitchStorageButton() {
+        tvSwitchStorage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // 退出登录确认对话框
+                new AlertDialog.Builder(getContext())
+                        .setTitle("退出登录")
+                        .setMessage("确定要退出登录吗？")
+                        .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                // 执行退出登录操作
+                                UserManager userManager = new UserManager(getContext());
+                                userManager.logoutUser();
+
+                                // 跳转到登录页面
+                                Intent intent = new Intent(getContext(), LoginActivity.class);
+                                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                startActivity(intent);
+
+                                // 关闭当前Fragment所在的Activity
+                                if (getActivity() != null) {
+                                    getActivity().finish();
+                                }
+
+                                showToast("已退出登录");
+                            }
+                        })
+                        .setNegativeButton("取消", null)
+                        .show();
+            }
+        });
     }
 
     // 启动定时刷新任务
@@ -245,6 +291,46 @@ public class HomeFragment extends Fragment {
         ivFanIcon.setBackgroundResource(fan == 1 ? R.drawable.yuanjiao2 : R.drawable.yuanjiao1);
         tvSafetyStatus.setText(rs485 == 1 ? "异常" : "安全");
         tvSafetyStatus.setTextColor(rs485 == 1 ? Color.parseColor("#EF4444") : Color.parseColor("#000000"));
+
+        // 检查温度是否超过30度
+        checkTemperatureStatus();
+    }
+
+    // 检查温度状态并显示异常提示
+    private void checkTemperatureStatus() {
+        if (temperature > 30 && !isTemperatureDialogShowing) {
+            isTemperatureDialogShowing = true;
+            showTemperatureAlertDialog();
+        } else if (temperature <= 30) {
+            isTemperatureDialogShowing = false; // 温度恢复正常，允许下次显示
+        }
+    }
+
+    // 显示温度异常对话框
+    private void showTemperatureAlertDialog() {
+        if (getActivity() == null) return;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("温度异常提醒")
+                .setMessage("当前温度为 " + temperature + "°C，已超过30°C！")
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        isTemperatureDialogShowing = false;
+                        dialog.dismiss();
+                    }
+                })
+                .setCancelable(true)
+                .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                    @Override
+                    public void onCancel(DialogInterface dialog) {
+                        isTemperatureDialogShowing = false;
+                    }
+                });
+
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
     }
 
     // 生成认证Token
