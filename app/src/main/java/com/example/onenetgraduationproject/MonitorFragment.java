@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
@@ -20,10 +21,6 @@ import androidx.fragment.app.Fragment;
 import com.github.AAChartModel.AAChartCore.AAChartCreator.AAChartModel;
 import com.github.AAChartModel.AAChartCore.AAChartCreator.AAChartView;
 import com.github.AAChartModel.AAChartCore.AAChartCreator.AASeriesElement;
-import com.github.AAChartModel.AAChartCore.AAOptionsModel.AADataLabels;
-import com.github.AAChartModel.AAChartCore.AAOptionsModel.AATitle;
-import com.github.AAChartModel.AAChartCore.AAOptionsModel.AAXAxis;
-import com.github.AAChartModel.AAChartCore.AAOptionsModel.AAYAxis;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -45,11 +42,12 @@ public class MonitorFragment extends Fragment {
     private Button btn_history_data;
     private AAChartView aaChartView;
     private Handler handler;
+    private Spinner sp_time_range;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // 全屏显示
-
+        getActivity().getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
 
         View view = inflater.inflate(R.layout.fragment_monitor, container, false);
 
@@ -63,6 +61,7 @@ public class MonitorFragment extends Fragment {
         et_history_identifier = view.findViewById(R.id.et_history_identifier);
         btn_history_data = view.findViewById(R.id.btn_history_data);
         aaChartView = view.findViewById(R.id.AAChartView);
+        sp_time_range = view.findViewById(R.id.sp_time_range);
         handler = new Handler(Looper.getMainLooper());
 
         // 设置按钮点击事件
@@ -73,12 +72,40 @@ public class MonitorFragment extends Fragment {
                 Toast.makeText(getActivity(), "请输入属性标识符", Toast.LENGTH_SHORT).show();
                 return;
             }
-            // 获取最近24小时的历史数据
+
+            // 获取当前时间作为结束时间
             long endTime = System.currentTimeMillis();
-            long startTime = endTime - (72 * 60 * 60 * 1000); // 24小时前
+            // 根据Spinner选择的时间范围计算起始时间
+            long startTime = calculateStartTime(endTime);
+
             // 在子线程执行历史数据请求
             new Thread(() -> getHistoryData(identifier, startTime, endTime)).start();
         });
+    }
+
+    /**
+     * 根据Spinner选择的时间范围计算起始时间
+     * @param endTime 结束时间（当前时间）
+     * @return 起始时间
+     */
+    private long calculateStartTime(long endTime) {
+        int selectedPosition = sp_time_range.getSelectedItemPosition();
+        switch (selectedPosition) {
+            case 0: // 1小时
+                return endTime - (1 * 60 * 60 * 1000);
+            case 1: // 6小时
+                return endTime - (6 * 60 * 60 * 1000);
+            case 2: // 12小时
+                return endTime - (12 * 60 * 60 * 1000);
+            case 3: // 24小时
+                return endTime - (24 * 60 * 60 * 1000);
+            case 4: // 3天
+                return endTime - (3 * 24 * 60 * 60 * 1000);
+            case 5: // 7天
+                return endTime - (7 * 24 * 60 * 60 * 1000);
+            default: // 默认1小时
+                return endTime - (1 * 60 * 60 * 1000);
+        }
     }
 
     private String getHistoryDataUrl(String identifier, long startTime, long endTime) {
@@ -167,7 +194,7 @@ public class MonitorFragment extends Fragment {
                     AAChartModel aaChartModel = new AAChartModel()
                             .chartType("line")
                             .title("历史数据趋势图")
-                            .subtitle("过去24小时数据变化")
+                            .subtitle(getSubtitle())
                             .backgroundColor("#ffffff")
                             .dataLabelsEnabled(true)
                             .categories(xAxisCategories.toArray(new String[0]))
@@ -188,6 +215,30 @@ public class MonitorFragment extends Fragment {
         } catch (Exception e) {
             Log.e(TAG, "解析历史数据异常: " + e.getMessage());
             handler.post(() -> Toast.makeText(getActivity(), "解析历史数据异常", Toast.LENGTH_SHORT).show());
+        }
+    }
+
+    /**
+     * 根据选择的时间范围获取图表副标题
+     * @return 图表副标题
+     */
+    private String getSubtitle() {
+        int selectedPosition = sp_time_range.getSelectedItemPosition();
+        switch (selectedPosition) {
+            case 0:
+                return "过去1小时数据变化";
+            case 1:
+                return "过去6小时数据变化";
+            case 2:
+                return "过去12小时数据变化";
+            case 3:
+                return "过去24小时数据变化";
+            case 4:
+                return "过去3天数据变化";
+            case 5:
+                return "过去7天数据变化";
+            default:
+                return "过去1小时数据变化";
         }
     }
 }

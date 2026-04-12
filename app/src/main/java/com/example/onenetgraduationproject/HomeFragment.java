@@ -53,6 +53,7 @@ public class HomeFragment extends Fragment {
     // UI组件
     private TextView tvTemperature, tvHumidity, tvSmoke, tvLightStatus, ivDoorIcon, ivFanIcon, tvSafetyStatus;
     private TextView tvSwitchStorage; // 新增：切换/退出登录按钮
+    private TextView tvAdminGreeting, tvAdminIcon; // 新增：管理员问候语和图标
     // 绑定主线程Looper，确保消息分发稳定
     private Handler handler = new Handler(Looper.getMainLooper());
     static String token;
@@ -99,6 +100,8 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        // 更新管理员状态显示
+        updateAdminStatus();
         // 启动或恢复刷新任务
         startRefreshTask();
         Log.d(TAG, "HomeFragment 可见，启动数据刷新任务");
@@ -124,6 +127,22 @@ public class HomeFragment extends Fragment {
         ivFanIcon = view.findViewById(R.id.tv_fan_status);
         tvSafetyStatus = view.findViewById(R.id.tv_safety_status);
         tvSwitchStorage = view.findViewById(R.id.tv_switch_storage); // 新增：初始化切换/退出登录按钮
+        tvAdminGreeting = view.findViewById(R.id.tv_admin_greeting); // 新增：初始化管理员问候语文本
+        tvAdminIcon = view.findViewById(R.id.tv_admin_icon); // 新增：初始化管理员图标文本
+    }
+
+    // 新增：更新管理员状态显示
+    private void updateAdminStatus() {
+        UserManager userManager = new UserManager(getContext());
+        boolean isAdmin = userManager.isCurrentUserAdmin();
+
+        if (isAdmin) {
+            tvAdminGreeting.setText("管理员你好");
+            tvAdminIcon.setText("管");
+        } else {
+            tvAdminGreeting.setText("你好");
+            tvAdminIcon.setText("员");
+        }
     }
 
     // 新增：设置切换/退出登录按钮功能

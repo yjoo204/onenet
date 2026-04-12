@@ -7,7 +7,6 @@ import android.util.Log;
 import com.google.firebase.crashlytics.buildtools.reloc.com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 
-
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +16,8 @@ public class UserManager {
     private static final String PREF_NAME = "user_prefs";
     private static final String KEY_USERS = "users";
     private static final String KEY_CURRENT_USER = "current_user";
+    private static final String ADMIN_USERNAME = "admin";
+    private static final String ADMIN_PASSWORD = "admin";
 
     private SharedPreferences sharedPreferences;
     private Gson gson;
@@ -24,6 +25,29 @@ public class UserManager {
     public UserManager(Context context) {
         sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         gson = new Gson();
+        // 自动创建管理员用户
+        createAdminUser();
+    }
+
+    // 自动创建管理员用户
+    private void createAdminUser() {
+        List<User> users = getUsers();
+        boolean adminExists = false;
+
+        // 检查管理员用户是否已存在
+        for (User user : users) {
+            if (user.getUsername().equals(ADMIN_USERNAME)) {
+                adminExists = true;
+                break;
+            }
+        }
+
+        // 如果管理员用户不存在，则创建
+        if (!adminExists) {
+            users.add(new User(ADMIN_USERNAME, ADMIN_PASSWORD));
+            saveUsers(users);
+            Log.d(TAG, "管理员用户已创建");
+        }
     }
 
     // 保存用户列表
@@ -82,6 +106,12 @@ public class UserManager {
     // 获取当前登录用户
     public String getCurrentUsername() {
         return sharedPreferences.getString(KEY_CURRENT_USER, null);
+    }
+
+    // 检查当前用户是否为管理员
+    public boolean isCurrentUserAdmin() {
+        String currentUsername = getCurrentUsername();
+        return ADMIN_USERNAME.equals(currentUsername);
     }
 
     // 用户登出

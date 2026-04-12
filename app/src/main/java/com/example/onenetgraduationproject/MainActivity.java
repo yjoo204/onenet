@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private ControlFragment controlFragment;
     private MonitorFragment monitorFragment;
     private Handler handler;
+    private UserManager userManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.fragmen);
 
         handler = new Handler(Looper.getMainLooper());
+        userManager = new UserManager(this);
 
         // 初始化组件
         bottomNavigationView = findViewById(R.id.bottom_navigation);
@@ -75,6 +77,11 @@ public class MainActivity extends AppCompatActivity {
             if (itemId == R.id.nav_home) {
                 selectedFragment = homeFragment;
             } else if (itemId == R.id.nav_control) {
+                // 检查当前用户是否为管理员
+                if (!userManager.isCurrentUserAdmin()) {
+                    Toast.makeText(this, "只有管理员才能访问控制界面", Toast.LENGTH_SHORT).show();
+                    return false;
+                }
                 selectedFragment = controlFragment;
             } else if (itemId == R.id.nav_history) {
                 selectedFragment = monitorFragment;
