@@ -118,4 +118,34 @@ public class UserManager {
     public void logoutUser() {
         sharedPreferences.edit().remove(KEY_CURRENT_USER).apply();
     }
+
+
+    // 重置密码
+    public boolean resetPassword(String username, String newPassword) {
+        List<User> users = getUsers();
+
+        for (User user : users) {
+            if (user.getUsername().equals(username)) {
+                user.setPassword(newPassword);
+                saveUsers(users);
+                return true;
+            }
+        }
+
+        return false; // 用户不存在
+    }
+
+    // 检查用户是否存在
+    public boolean userExists(String username) {
+        List<User> users = getUsers();
+
+        for (User user : users) {
+            if (user.getUsername().equals(username)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 }

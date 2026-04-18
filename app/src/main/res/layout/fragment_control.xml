@@ -186,7 +186,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center_vertical"
-                android:text="温度阈值 (Temperature_Limit)"
+                android:text="温度阈值"
                 android:textSize="16sp" />
 
             <EditText
@@ -218,7 +218,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center_vertical"
-                android:text="湿度阈值 (HumidityUpperLimit)"
+                android:text="湿度阈值"
                 android:textSize="16sp" />
 
             <EditText

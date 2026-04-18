@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">onenet Graduation project</string>
     <string-array name="time_ranges">
+        <item>10分钟</item>
+        <item>30分钟</item>
         <item>1小时</item>
         <item>6小时</item>
         <item>12小时</item>
@@ -9,5 +11,17 @@
         <item>7天</item>
     </string-array>
 
+    <string-array name="device_properties">
+        <item>temp</item>
+        <item>hum</item>
+        <item>light</item>
+        <item>buzzer</item>
+        <item>led</item>
+        <item>fan</item>
+        <item>kaiguan</item>
+        <item>sr505</item>
+    </string-array>
+
     <string name="select_time_range">选择查询时间</string>
+    <string name="select_property">选择属性</string>
 </resources>

@@ -15,7 +15,7 @@ public class LoginActivity extends AppCompatActivity {
     private EditText etUsername;
     private EditText etPassword;
     private Button btnLogin;
-    private TextView btnRegister;
+    private TextView btnRegister, btnForgotPassword;
     private UserManager userManager;
 
     @Override
@@ -28,6 +28,7 @@ public class LoginActivity extends AppCompatActivity {
         etPassword = findViewById(R.id.et_password);
         btnLogin = findViewById(R.id.btn_login);
         btnRegister = findViewById(R.id.btn_register);
+        btnForgotPassword = findViewById(R.id.btn_forgot_password);
         userManager = new UserManager(this);
 
         // 检查用户是否已登录
@@ -63,6 +64,15 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        // 设置忘记密码按钮点击事件
+        btnForgotPassword.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(LoginActivity.this, ResetPasswordActivity.class);
                 startActivity(intent);
             }
         });

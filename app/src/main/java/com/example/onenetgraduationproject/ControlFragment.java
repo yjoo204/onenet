@@ -10,6 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Switch;
 import android.widget.Toast;
@@ -108,7 +109,7 @@ public class ControlFragment extends Fragment {
                     showToast("请输入温度阈值");
                     return;
                 }
-                setDeviceProperty("Temperature_Limit", temperatureValue);
+                setDeviceProperty("temp_max", temperatureValue);
             }
         });
 
@@ -179,7 +180,7 @@ public class ControlFragment extends Fragment {
         }
     }
 
-    // 设置设备属性方法（保持不变）
+    // 设置设备属性方法
     private void setDeviceProperty(String propertyKey, Object propertyValue) {
         // 确保网络请求在子线程中执行
         new Thread(() -> {
@@ -244,14 +245,30 @@ public class ControlFragment extends Fragment {
 
                     // 处理响应数据
                     String responseString = response.toString();
-                    Log.d(TAG, "设置设备属性成功，响应: " + responseString);
+                    Log.d(TAG, "设置设备属性响应: " + responseString);
 
-                    // 在主线程显示成功信息
-                    Object finalValue1 = finalValue;
-                    getActivity().runOnUiThread(() -> {
-                        Toast.makeText(getActivity(), propertyKey + "已" + (finalValue1.equals(1) ? "开启" : "关闭"), Toast.LENGTH_SHORT).show();
-                        Log.d(TAG, "设置设备属性成功: " + propertyKey + " = " + finalValue1);
-                    });
+                    // 解析响应JSON
+                    JSONObject responseJson = new JSONObject(responseString);
+                    int code = responseJson.getInt("code");
+                    String msg = responseJson.getString("msg");
+
+                    // 检查code是否为200或0
+                    if (code == 200 || code == 0) {
+                        // 设置成功
+                        Object finalValue1 = finalValue;
+                        getActivity().runOnUiThread(() -> {
+                            Toast.makeText(getActivity(), propertyKey + "已" + (finalValue1.equals(1) ? "开启" : "关闭"), Toast.LENGTH_SHORT).show();
+                            Log.d(TAG, "设置设备属性成功: " + propertyKey + " = " + finalValue1);
+                        });
+                    } else {
+                        // 设置失败
+                        Log.e(TAG, "设置设备属性失败，错误码: " + code + "，错误信息: " + msg);
+                        getActivity().runOnUiThread(() -> {
+                            Toast.makeText(getActivity(), "设置设备属性失败: " + msg, Toast.LENGTH_SHORT).show();
+                            // 失败时恢复开关状态
+                            restoreSwitchState(propertyKey);
+                        });
+                    }
                 } else {
                     // 请求失败，读取错误信息
                     BufferedReader errorReader = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
@@ -279,7 +296,7 @@ public class ControlFragment extends Fragment {
                     Toast.makeText(getActivity(), "设置设备属性异常: " + e.getMessage(), Toast.LENGTH_SHORT).show();
 
                     // 异常时恢复开关状态
-                    restoreSwitchState((String) propertyValue);
+                    restoreSwitchState(propertyKey);
                 });
             } finally {
                 if (connection != null) {
@@ -296,16 +313,36 @@ public class ControlFragment extends Fragment {
         getActivity().runOnUiThread(() -> {
             switch (propertyKey) {
                 case "buzzer":
+                    // 暂时移除监听器
+                    switchBuzzer.setOnCheckedChangeListener(null);
+                    // 恢复状态
                     switchBuzzer.setChecked(!switchBuzzer.isChecked());
+                    // 重新设置监听器
+                    setupSwitchListeners();
                     break;
                 case "fan":
+                    // 暂时移除监听器
+                    switchFan.setOnCheckedChangeListener(null);
+                    // 恢复状态
                     switchFan.setChecked(!switchFan.isChecked());
+                    // 重新设置监听器
+                    setupSwitchListeners();
                     break;
                 case "led":
+                    // 暂时移除监听器
+                    switchLed.setOnCheckedChangeListener(null);
+                    // 恢复状态
                     switchLed.setChecked(!switchLed.isChecked());
+                    // 重新设置监听器
+                    setupSwitchListeners();
                     break;
                 case "kaiguan":
+                    // 暂时移除监听器
+                    switchKaiguan.setOnCheckedChangeListener(null);
+                    // 恢复状态
                     switchKaiguan.setChecked(!switchKaiguan.isChecked());
+                    // 重新设置监听器
+                    setupSwitchListeners();
                     break;
             }
         });

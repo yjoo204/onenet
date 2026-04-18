@@ -157,7 +157,7 @@
                     android:id="@+id/tv_humidity_status"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="正常(阈值:40%~60%)"
+                    android:text="正常(阈值:40%~90%)"
                     android:textColor="#10B981"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -222,7 +222,7 @@
                     android:id="@+id/tv_temperature_status"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="正常 (阈值：-20~-15℃)"
+                    android:text="正常 (阈值：-20~-30℃)"
                     android:textColor="#10B981"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -259,7 +259,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="10dp"
-                android:text="烟雾浓度"
+                android:text="光照强度"
                 android:textStyle="bold"
                 android:textColor="#64748B"
                 android:textSize="18sp" />
@@ -283,7 +283,7 @@
                     android:id="@+id/tv_smoke_unit"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="mg/m³"
+                    android:text="lux"
                     android:textSize="25sp" />
             </LinearLayout>
 
@@ -302,7 +302,7 @@
                     android:id="@+id/tv_smoke_status"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="正常 (阈值：≤0.5mg/m³)"
+                    android:text="正常 "
                     android:textColor="#10B981"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -418,7 +418,6 @@
                     android:id="@+id/iv_fan_icon"
                     android:layout_width="64dp"
                     android:layout_height="64dp"
-                    android:background="@drawable/yuanjiao1"
                     app:srcCompat="@drawable/smokedensity" />
 
                 <TextView
@@ -450,7 +449,7 @@
                     android:id="@+id/iv_light_icon"
                     android:layout_width="64dp"
                     android:layout_height="64dp"
-                    android:background="@drawable/yuanjiao1"
+
                     app:srcCompat="@drawable/led" />
 
                 <TextView
@@ -481,7 +480,7 @@
                     android:id="@+id/iv_door_icon"
                     android:layout_width="64dp"
                     android:layout_height="64dp"
-                    android:background="@drawable/yuanjiao1"
+
                     app:srcCompat="@drawable/sahng" />
 
                 <TextView

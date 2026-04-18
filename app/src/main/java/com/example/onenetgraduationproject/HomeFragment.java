@@ -51,7 +51,7 @@ public class HomeFragment extends Fragment {
     private MqttAndroidClient mqttAndroidClient;
 
     // UI组件
-    private TextView tvTemperature, tvHumidity, tvSmoke, tvLightStatus, ivDoorIcon, ivFanIcon, tvSafetyStatus;
+    private TextView tvTemperature, tvHumidity, tvSmoke, tvLightStatus, ivDoorIcon, ivFanIcon, tvSafetyStatus, tvTemperatureStatus;
     private TextView tvSwitchStorage; // 新增：切换/退出登录按钮
     private TextView tvAdminGreeting, tvAdminIcon; // 新增：管理员问候语和图标
     // 绑定主线程Looper，确保消息分发稳定
@@ -66,6 +66,7 @@ public class HomeFragment extends Fragment {
     private int doorState = 0;
     private int fan = 0;
     private int rs485 = 0;
+    private int tempMax = 30; // 默认阈值为30℃
 
     // 温度异常对话框标记，避免重复显示
     private boolean isTemperatureDialogShowing = false;
@@ -126,6 +127,7 @@ public class HomeFragment extends Fragment {
         ivDoorIcon = view.findViewById(R.id.tv_door_status);
         ivFanIcon = view.findViewById(R.id.tv_fan_status);
         tvSafetyStatus = view.findViewById(R.id.tv_safety_status);
+        tvTemperatureStatus = view.findViewById(R.id.tv_temperature_status); // 新增：初始化温度状态控件
         tvSwitchStorage = view.findViewById(R.id.tv_switch_storage); // 新增：初始化切换/退出登录按钮
         tvAdminGreeting = view.findViewById(R.id.tv_admin_greeting); // 新增：初始化管理员问候语文本
         tvAdminIcon = view.findViewById(R.id.tv_admin_icon); // 新增：初始化管理员图标文本
@@ -279,6 +281,8 @@ public class HomeFragment extends Fragment {
                     fan = Integer.parseInt(valueStr);
                 } else if ("rs485".equals(identifier)) {
                     rs485 = Integer.parseInt(valueStr);
+                } else if ("temp_max".equals(identifier)) {
+                    tempMax = Integer.parseInt(valueStr);
                 } else {
                     Log.d(TAG, "忽略未使用的属性: " + identifier);
                 }
@@ -311,16 +315,31 @@ public class HomeFragment extends Fragment {
         tvSafetyStatus.setText(rs485 == 1 ? "异常" : "安全");
         tvSafetyStatus.setTextColor(rs485 == 1 ? Color.parseColor("#EF4444") : Color.parseColor("#000000"));
 
-        // 检查温度是否超过30度
+        // 更新温度状态和阈值
+        updateTemperatureStatus();
+
+        // 检查温度是否超过阈值
         checkTemperatureStatus();
+    }
+
+    // 更新温度状态显示
+    private void updateTemperatureStatus() {
+        // 计算温度状态
+        boolean isNormal = temperature <= tempMax;
+        String status = isNormal ? "正常" : "异常";
+        int textColor = isNormal ? Color.parseColor("#10B981") : Color.parseColor("#EF4444");
+
+        // 更新温度状态文本和颜色
+        tvTemperatureStatus.setText(status + " (阈值：≤" + tempMax + "℃)");
+        tvTemperatureStatus.setTextColor(textColor);
     }
 
     // 检查温度状态并显示异常提示
     private void checkTemperatureStatus() {
-        if (temperature > 30 && !isTemperatureDialogShowing) {
+        if (temperature > tempMax && !isTemperatureDialogShowing) {
             isTemperatureDialogShowing = true;
             showTemperatureAlertDialog();
-        } else if (temperature <= 30) {
+        } else if (temperature <= tempMax) {
             isTemperatureDialogShowing = false; // 温度恢复正常，允许下次显示
         }
     }
@@ -331,7 +350,7 @@ public class HomeFragment extends Fragment {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setTitle("温度异常提醒")
-                .setMessage("当前温度为 " + temperature + "°C，已超过30°C！")
+                .setMessage("当前温度为 " + temperature + "°C，已超过阈值 " + tempMax + "°C！")
                 .setIcon(android.R.drawable.ic_dialog_alert)
                 .setPositiveButton("确定", new DialogInterface.OnClickListener() {
                     @Override

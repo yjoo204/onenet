@@ -39,10 +39,10 @@ import javax.net.ssl.HttpsURLConnection;
 
 public class MonitorFragment extends Fragment {
     private EditText et_history_identifier;
-    private Button btn_history_data;
+    private Button btn_history_data, btn_quick_history_data;
     private AAChartView aaChartView;
     private Handler handler;
-    private Spinner sp_time_range;
+    private Spinner sp_time_range, sp_quick_time_range, sp_device_property;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -60,11 +60,14 @@ public class MonitorFragment extends Fragment {
     private void initViews(View view) {
         et_history_identifier = view.findViewById(R.id.et_history_identifier);
         btn_history_data = view.findViewById(R.id.btn_history_data);
+        btn_quick_history_data = view.findViewById(R.id.btn_quick_history_data);
         aaChartView = view.findViewById(R.id.AAChartView);
         sp_time_range = view.findViewById(R.id.sp_time_range);
+        sp_quick_time_range = view.findViewById(R.id.sp_quick_time_range);
+        sp_device_property = view.findViewById(R.id.sp_device_property);
         handler = new Handler(Looper.getMainLooper());
 
-        // 设置按钮点击事件
+        // 设置手动查询按钮点击事件
         btn_history_data.setOnClickListener(v -> {
             // 获取用户输入的标识符
             String identifier = et_history_identifier.getText().toString().trim();
@@ -76,7 +79,21 @@ public class MonitorFragment extends Fragment {
             // 获取当前时间作为结束时间
             long endTime = System.currentTimeMillis();
             // 根据Spinner选择的时间范围计算起始时间
-            long startTime = calculateStartTime(endTime);
+            long startTime = calculateStartTime(endTime, sp_time_range);
+
+            // 在子线程执行历史数据请求
+            new Thread(() -> getHistoryData(identifier, startTime, endTime)).start();
+        });
+
+        // 设置快捷查询按钮点击事件
+        btn_quick_history_data.setOnClickListener(v -> {
+            // 获取Spinner中选择的属性
+            String identifier = sp_device_property.getSelectedItem().toString();
+
+            // 获取当前时间作为结束时间
+            long endTime = System.currentTimeMillis();
+            // 根据Spinner选择的时间范围计算起始时间
+            long startTime = calculateStartTime(endTime, sp_quick_time_range);
 
             // 在子线程执行历史数据请求
             new Thread(() -> getHistoryData(identifier, startTime, endTime)).start();
@@ -86,25 +103,30 @@ public class MonitorFragment extends Fragment {
     /**
      * 根据Spinner选择的时间范围计算起始时间
      * @param endTime 结束时间（当前时间）
+     * @param spinner 时间范围选择器
      * @return 起始时间
      */
-    private long calculateStartTime(long endTime) {
-        int selectedPosition = sp_time_range.getSelectedItemPosition();
+    private long calculateStartTime(long endTime, Spinner spinner) {
+        int selectedPosition = spinner.getSelectedItemPosition();
         switch (selectedPosition) {
-            case 0: // 1小时
+            case 0: // 10分钟
+                return endTime - (10 * 60 * 1000);
+            case 1: // 30分钟
+                return endTime - (30 * 60 * 1000);
+            case 2: // 1小时
                 return endTime - (1 * 60 * 60 * 1000);
-            case 1: // 6小时
+            case 3: // 6小时
                 return endTime - (6 * 60 * 60 * 1000);
-            case 2: // 12小时
+            case 4: // 12小时
                 return endTime - (12 * 60 * 60 * 1000);
-            case 3: // 24小时
+            case 5: // 24小时
                 return endTime - (24 * 60 * 60 * 1000);
-            case 4: // 3天
+            case 6: // 3天
                 return endTime - (3 * 24 * 60 * 60 * 1000);
-            case 5: // 7天
+            case 7: // 7天
                 return endTime - (7 * 24 * 60 * 60 * 1000);
-            default: // 默认1小时
-                return endTime - (1 * 60 * 60 * 1000);
+            default: // 默认10分钟
+                return endTime - (10 * 60 * 1000);
         }
     }
 
@@ -119,6 +141,7 @@ public class MonitorFragment extends Fragment {
     // 获取历史数据
     private void getHistoryData(String identifier, long startTime, long endTime) {
         String historyUrl = getHistoryDataUrl(identifier, startTime, endTime);
+
         HttpsURLConnection connection = null;
         StringBuilder response = new StringBuilder();
         try {
@@ -141,7 +164,7 @@ public class MonitorFragment extends Fragment {
                 is.close();
 
                 // 解析并展示历史数据
-                parseAndShowHistoryData(response.toString());
+                parseAndShowHistoryData(response.toString(), identifier);
             } else {
                 Log.e(TAG, "历史数据请求失败，响应码: " + connection.getResponseCode());
             }
@@ -158,7 +181,7 @@ public class MonitorFragment extends Fragment {
         Log.d(TAG, "历史数据响应: " + response);
     }
 
-    private void parseAndShowHistoryData(String json) {
+    private void parseAndShowHistoryData(String json, String identifier) {
         try {
             // 解析JSON响应
             JSONObject jsonObject = new JSONObject(json);
@@ -172,7 +195,7 @@ public class MonitorFragment extends Fragment {
                 List<Double> values = new ArrayList<>();
 
                 // 格式化时间
-                SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+                SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 
                 // 遍历数据列表
                 for (int i = 0; i < list.length(); i++) {
@@ -194,13 +217,13 @@ public class MonitorFragment extends Fragment {
                     AAChartModel aaChartModel = new AAChartModel()
                             .chartType("line")
                             .title("历史数据趋势图")
-                            .subtitle(getSubtitle())
+                            .subtitle("属性: " + identifier + " 的数据变化")
                             .backgroundColor("#ffffff")
                             .dataLabelsEnabled(true)
                             .categories(xAxisCategories.toArray(new String[0]))
                             .series(new AASeriesElement[]{
                                     new AASeriesElement()
-                                            .name(et_history_identifier.getText().toString().trim())
+                                            .name(identifier)
                                             .data(values.toArray(new Double[0]))
                             });
 
@@ -215,30 +238,6 @@ public class MonitorFragment extends Fragment {
         } catch (Exception e) {
             Log.e(TAG, "解析历史数据异常: " + e.getMessage());
             handler.post(() -> Toast.makeText(getActivity(), "解析历史数据异常", Toast.LENGTH_SHORT).show());
-        }
-    }
-
-    /**
-     * 根据选择的时间范围获取图表副标题
-     * @return 图表副标题
-     */
-    private String getSubtitle() {
-        int selectedPosition = sp_time_range.getSelectedItemPosition();
-        switch (selectedPosition) {
-            case 0:
-                return "过去1小时数据变化";
-            case 1:
-                return "过去6小时数据变化";
-            case 2:
-                return "过去12小时数据变化";
-            case 3:
-                return "过去24小时数据变化";
-            case 4:
-                return "过去3天数据变化";
-            case 5:
-                return "过去7天数据变化";
-            default:
-                return "过去1小时数据变化";
         }
     }
 }
