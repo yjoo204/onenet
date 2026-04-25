@@ -42,10 +42,12 @@ public class MainActivity extends AppCompatActivity {
         // 设置底部导航栏点击事件
         bottomNavigationView.setOnItemSelectedListener(item -> {
             Fragment selectedFragment = null;
-            int itemId = item.getItemId();
 
+            int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
                 selectedFragment = homeFragment;
+            } else if (itemId == R.id.nav_control) {
+                selectedFragment = controlFragment;
             } else if (itemId == R.id.nav_history) {
                 selectedFragment = monitorFragment;
             }

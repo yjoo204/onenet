@@ -4,10 +4,10 @@
         android:id="@+id/nav_home"
         android:icon="@drawable/temp"
         android:title="首页" />
-<!--    <item-->
-<!--        android:id="@+id/nav_control"-->
-<!--        android:icon="@drawable/led"-->
-<!--        android:title="控制" />-->
+    <item
+        android:id="@+id/nav_control"
+        android:icon="@drawable/led"
+        android:title="控制" />
     <item
         android:id="@+id/nav_history"
         android:icon="@android:drawable/ic_lock_idle_lock"

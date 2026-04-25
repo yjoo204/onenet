@@ -118,7 +118,7 @@ public class ControlFragment extends Fragment {
     //        }
     //    }
     //}
-    ********************************************************/
+     ********************************************************/
     private void setDeviceProperty(String propertyKey, Object propertyValue) {
         // 确保网络请求在子线程中执行
         new Thread(() -> {
@@ -183,14 +183,33 @@ public class ControlFragment extends Fragment {
 
                     // 处理响应数据
                     String responseString = response.toString();
-                    Log.d(TAG, "设置设备属性成功，响应: " + responseString);
+                    Log.d(TAG, "设置设备属性响应: " + responseString);
 
-                    // 在主线程显示成功信息
-                    Object finalValue1 = finalValue;
-                    getActivity().runOnUiThread(() -> {
-                        Toast.makeText(getActivity(), "设置设备属性成功", Toast.LENGTH_SHORT).show();
-                        Log.d(TAG, "设置设备属性成功: " + propertyKey + " = " + finalValue1);
-                    });
+                    // 解析响应体，检查错误码
+                    try {
+                        JSONObject responseJson = new JSONObject(responseString);
+                        int code = responseJson.getInt("code");
+                        if (code == 0) {
+                            // 成功
+                            Object finalValue1 = finalValue;
+                            getActivity().runOnUiThread(() -> {
+                                Toast.makeText(getActivity(), "设置设备属性成功", Toast.LENGTH_SHORT).show();
+                                Log.d(TAG, "设置设备属性成功: " + propertyKey + " = " + finalValue1);
+                            });
+                        } else {
+                            // 失败
+                            String msg = responseJson.getString("msg");
+                            Log.e(TAG, "设置设备属性失败: " + msg);
+                            getActivity().runOnUiThread(() -> {
+                                Toast.makeText(getActivity(), "设置设备属性失败: " + msg, Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    } catch (JSONException e) {
+                        Log.e(TAG, "解析响应失败: " + e.getMessage());
+                        getActivity().runOnUiThread(() -> {
+                            Toast.makeText(getActivity(), "解析响应失败", Toast.LENGTH_SHORT).show();
+                        });
+                    }
                 } else {
                     // 请求失败，读取错误信息
                     BufferedReader errorReader = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
