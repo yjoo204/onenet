@@ -36,7 +36,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:weightSum="1">
 
         <TextView
             android:id="@+id/tv_admin_icon"
@@ -51,8 +52,9 @@
             android:textStyle="bold" />
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_weight="1"
             android:orientation="vertical">
 
             <TextView
@@ -79,7 +81,7 @@
             android:id="@+id/tv_switch_storage"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_marginLeft="190dp"
+            android:layout_marginLeft="10dp"
             android:gravity="center"
             android:text="切换 >"
             android:textColor="#3B82F6"
@@ -165,6 +167,7 @@
 
         </LinearLayout>
 
+        <!-- 温度显示 -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="180dp"
@@ -230,7 +233,6 @@
 
         </LinearLayout>
 
-        <!-- 温度显示 -->
     </LinearLayout>
 
     <LinearLayout
@@ -376,7 +378,6 @@
 
         </LinearLayout>
 
-        <!-- 温度显示 -->
     </LinearLayout>
 
     <LinearLayout
@@ -388,10 +389,7 @@
         android:layout_marginLeft="12dp"
         android:layout_marginRight="12dp"
         android:padding="12dp"
-        android:paddingLeft="12dp"
-        android:paddingRight="12dp"
-        android:paddingBottom="12dp"
-        android:weightSum="2">
+        android:weightSum="3">
 
         <TextView
             android:id="@+id/tv_device_status_title"
@@ -405,12 +403,13 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:weightSum="3">
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="85dp"
+                android:layout_weight="1"
                 android:gravity="center"
                 android:orientation="vertical">
 
@@ -439,9 +438,9 @@
             </LinearLayout>
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="85dp"
+                android:layout_weight="1"
                 android:gravity="center"
                 android:orientation="vertical">
 
@@ -449,7 +448,6 @@
                     android:id="@+id/iv_light_icon"
                     android:layout_width="64dp"
                     android:layout_height="64dp"
-
                     app:srcCompat="@drawable/led" />
 
                 <TextView
@@ -471,8 +469,9 @@
             </LinearLayout>
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:gravity="center"
                 android:orientation="vertical">
 
@@ -480,7 +479,6 @@
                     android:id="@+id/iv_door_icon"
                     android:layout_width="64dp"
                     android:layout_height="64dp"
-
                     app:srcCompat="@drawable/sahng" />
 
                 <TextView

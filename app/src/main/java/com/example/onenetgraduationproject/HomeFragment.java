@@ -51,7 +51,7 @@ public class HomeFragment extends Fragment {
     private MqttAndroidClient mqttAndroidClient;
 
     // UI组件
-    private TextView tvTemperature, tvHumidity, tvSmoke, tvLightStatus, ivDoorIcon, ivFanIcon, tvSafetyStatus, tvTemperatureStatus;
+    private TextView tvTemperature, tvHumidity, tvSmoke, tvLightStatus, ivDoorIcon, ivFanIcon, tvSafetyStatus, tvTemperatureStatus, tvSafetyDetails;
     private TextView tvSwitchStorage; // 新增：切换/退出登录按钮
     private TextView tvAdminGreeting, tvAdminIcon; // 新增：管理员问候语和图标
     // 绑定主线程Looper，确保消息分发稳定
@@ -67,6 +67,8 @@ public class HomeFragment extends Fragment {
     private int fan = 0;
     private int rs485 = 0;
     private int tempMax = 30; // 默认阈值为30℃
+    private int sr505 = 0; // 人体红外传感器状态
+    private int kaiguan = 0; // 库门状态
 
     // 温度异常对话框标记，避免重复显示
     private boolean isTemperatureDialogShowing = false;
@@ -128,6 +130,7 @@ public class HomeFragment extends Fragment {
         ivFanIcon = view.findViewById(R.id.tv_fan_status);
         tvSafetyStatus = view.findViewById(R.id.tv_safety_status);
         tvTemperatureStatus = view.findViewById(R.id.tv_temperature_status); // 新增：初始化温度状态控件
+        tvSafetyDetails = view.findViewById(R.id.tv_safety_details); // 新增：初始化安全详情控件
         tvSwitchStorage = view.findViewById(R.id.tv_switch_storage); // 新增：初始化切换/退出登录按钮
         tvAdminGreeting = view.findViewById(R.id.tv_admin_greeting); // 新增：初始化管理员问候语文本
         tvAdminIcon = view.findViewById(R.id.tv_admin_icon); // 新增：初始化管理员图标文本
@@ -271,18 +274,20 @@ public class HomeFragment extends Fragment {
                     temperature = Integer.parseInt(valueStr);
                 } else if ("hum".equals(identifier)) {
                     humidity = Integer.parseInt(valueStr);
-                } else if ("smoke".equals(identifier)) {
+                } else if ("light".equals(identifier)) {
                     smoke = Integer.parseInt(valueStr);
                 } else if ("led".equals(identifier)) {
                     ledState = Integer.parseInt(valueStr);
                 } else if ("kaiguan".equals(identifier)) {
-                    doorState = Integer.parseInt(valueStr);
+                    kaiguan = Integer.parseInt(valueStr);
                 } else if ("fan".equals(identifier)) {
                     fan = Integer.parseInt(valueStr);
                 } else if ("rs485".equals(identifier)) {
                     rs485 = Integer.parseInt(valueStr);
                 } else if ("temp_max".equals(identifier)) {
                     tempMax = Integer.parseInt(valueStr);
+                } else if ("sr505".equals(identifier)) {
+                    sr505 = Integer.parseInt(valueStr);
                 } else {
                     Log.d(TAG, "忽略未使用的属性: " + identifier);
                 }
@@ -306,20 +311,43 @@ public class HomeFragment extends Fragment {
         tvLightStatus.setText(ledState == 1 ? "已开启" : "已关闭");
         tvLightStatus.setTextColor(ledState == 1 ? Color.parseColor("#10B981") : Color.parseColor("#1F2937"));
         tvLightStatus.setBackgroundResource(ledState == 1 ? R.drawable.yuanjiao2 : R.drawable.yuanjiao1);
-        ivDoorIcon.setText(doorState == 1 ? "已开启" : "已关闭");
-        ivDoorIcon.setTextColor(doorState == 1 ? Color.parseColor("#10B981") : Color.parseColor("#1F2937"));
-        ivDoorIcon.setBackgroundResource(doorState == 1 ? R.drawable.yuanjiao2 : R.drawable.yuanjiao1);
+        ivDoorIcon.setText(kaiguan == 1 ? "已开启" : "已关闭");
+        ivDoorIcon.setTextColor(kaiguan == 1 ? Color.parseColor("#10B981") : Color.parseColor("#1F2937"));
+        ivDoorIcon.setBackgroundResource(kaiguan == 1 ? R.drawable.yuanjiao2 : R.drawable.yuanjiao1);
         ivFanIcon.setText(fan == 1 ? "已开启" : "已关闭");
         ivFanIcon.setTextColor(fan == 1 ? Color.parseColor("#10B981") : Color.parseColor("#1F2937"));
         ivFanIcon.setBackgroundResource(fan == 1 ? R.drawable.yuanjiao2 : R.drawable.yuanjiao1);
-        tvSafetyStatus.setText(rs485 == 1 ? "异常" : "安全");
-        tvSafetyStatus.setTextColor(rs485 == 1 ? Color.parseColor("#EF4444") : Color.parseColor("#000000"));
+
+        // 更新安全状态和详情
+        updateSafetyStatus();
 
         // 更新温度状态和阈值
         updateTemperatureStatus();
 
         // 检查温度是否超过阈值
         checkTemperatureStatus();
+    }
+
+    // 更新安全状态显示
+    private void updateSafetyStatus() {
+        // 构建安全详情文本
+        String personStatus = sr505 == 1 ? "有人员" : "无人员";
+        String doorStatus = kaiguan == 1 ? "库门开启" : "库门关闭";
+        tvSafetyDetails.setText(personStatus + " | " + doorStatus);
+
+        // 计算安全状态
+        boolean isSafe;
+        if (kaiguan == 0 && sr505 == 1) {
+            // 库门关闭但有人员，异常
+            isSafe = false;
+        } else {
+            // 其他情况都安全
+            isSafe = true;
+        }
+
+        // 更新安全状态文本和颜色
+        tvSafetyStatus.setText(isSafe ? "安全" : "异常");
+        tvSafetyStatus.setTextColor(isSafe ? Color.parseColor("#000000") : Color.parseColor("#EF4444"));
     }
 
     // 更新温度状态显示
