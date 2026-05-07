@@ -37,7 +37,8 @@
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
         android:text="吴彦祖onenet代码免费开源，欢迎使用\nbilbil搜索：帅过吴彦祖力,免费获取，切勿转卖\n觉得好用对你有帮助点击可以点这里一下支持"
-        android:textColor="#000000" />
+        android:textColor="#000000"
+        android:visibility="invisible" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -58,7 +59,7 @@
             android:layout_height="wrap_content"
             android:ems="10"
             android:inputType="text"
-            android:text=""
+            android:text="d1"
             android:textColor="#000000" />
 
     </LinearLayout>
@@ -82,7 +83,7 @@
             android:layout_height="wrap_content"
             android:ems="10"
             android:inputType="text"
-            android:text=""
+            android:text="chS1ar1AHC"
             android:textColor="#000000" />
 
     </LinearLayout>
@@ -107,7 +108,7 @@
             android:layout_height="wrap_content"
             android:ems="10"
             android:inputType="text"
-            android:text="" />
+            android:text="414333" />
 
     </LinearLayout>
 
@@ -131,7 +132,7 @@
             android:layout_height="wrap_content"
             android:ems="10"
             android:inputType="text"
-            android:text="" />
+            android:text="LS5IHbV1ZVVSCQeN1b7wXKHbtaEI3B+NO13pgRSXhvG7wobAzZYkJ0jkq94drGQu" />
 
     </LinearLayout>
 

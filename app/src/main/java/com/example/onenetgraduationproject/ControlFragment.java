@@ -9,8 +9,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 import androidx.fragment.app.Fragment;
 import org.json.JSONException;
@@ -31,6 +33,7 @@ public class ControlFragment extends Fragment {
     //private String publishTopic = "$sys/v79fer6hC4/pi1/thing/property/post";
     private String setDevicePropertyUrl = "https://iot-api.heclouds.com/thingmodel/set-device-property";
     // UI组件
+    private Spinner spPropertyKey;
     private EditText etPropertyKey;
     private EditText etPropertyValue;
     private Button btnSendProperty;
@@ -55,9 +58,27 @@ public class ControlFragment extends Fragment {
 
     private void initViews(View view) {
         // 初始化UI组件
+        spPropertyKey = view.findViewById(R.id.sp_property_key);
         etPropertyKey = view.findViewById(R.id.et_property_key);
         etPropertyValue = view.findViewById(R.id.et_property_value);
         btnSendProperty = view.findViewById(R.id.btn_send_property);
+
+        // 设置Spinner选中事件
+        spPropertyKey.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selectedItem = parent.getItemAtPosition(position).toString();
+                // 当选中的不是第一个提示项时，将选中内容填充到EditText
+                if (position > 0) {
+                    etPropertyKey.setText(selectedItem);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // 未选中任何项时的处理
+            }
+        });
 
         // 设置按钮点击事件
         btnSendProperty.setOnClickListener(new View.OnClickListener() {

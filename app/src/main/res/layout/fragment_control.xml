@@ -29,10 +29,18 @@
                 android:id="@+id/et_property_key"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginLeft="8dp"
                 android:layout_weight="1"
                 android:hint="属性名"
                 android:inputType="text" />
 
+            <Spinner
+                android:id="@+id/sp_property_key"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="选择属性名"
+                android:entries="@array/property_keys" />
             <EditText
                 android:id="@+id/et_property_value"
                 android:layout_width="0dp"

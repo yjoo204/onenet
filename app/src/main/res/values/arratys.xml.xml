@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="property_keys">
+        <item>Altitude_threshold</item>
+        <item>Humidity_threshold</item>
+        <item>LED_status</item>
+        <item>Pressure_threshold</item>
+        <item>Temperature_threshold</item>
+        <item>Ultraviolet_Threshold</item>
+    </string-array>
+</resources>
