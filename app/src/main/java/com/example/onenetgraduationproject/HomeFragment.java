@@ -44,7 +44,24 @@ public class HomeFragment extends Fragment {
     private String queryUrl;
 
     // UI组件
-    private TextView tvAllData,tv_title;
+    private TextView tv_title;
+
+    // 实时传感器数据
+    private TextView tv_temperature;
+    private TextView tv_humidity;
+    private TextView tv_bmp_press;
+    private TextView tv_bmp_asl;
+    private TextView tv_pm2_5;
+    private TextView tv_light_val;
+    private TextView tv_uv_intensity;
+    private TextView tv_led_status;
+
+    // 阈值设置
+    private TextView tv_temperature_threshold;
+    private TextView tv_humidity_threshold;
+    private TextView tv_pressure_threshold;
+    private TextView tv_altitude_threshold;
+    private TextView tv_ultraviolet_threshold;
 
     private Handler handler = new Handler(Looper.getMainLooper());
     static String token;
@@ -93,8 +110,25 @@ public class HomeFragment extends Fragment {
     }
 
     private void initViews(View view) {
-        tvAllData = view.findViewById(R.id.tv_all_data);
         tv_title = view.findViewById(R.id.tv_title);
+
+        // 实时传感器数据
+        tv_temperature = view.findViewById(R.id.tv_temperature);
+        tv_humidity = view.findViewById(R.id.tv_humidity);
+        tv_bmp_press = view.findViewById(R.id.tv_bmp_press);
+        tv_bmp_asl = view.findViewById(R.id.tv_bmp_asl);
+        tv_pm2_5 = view.findViewById(R.id.tv_pm2_5);
+        tv_light_val = view.findViewById(R.id.tv_light_val);
+        tv_uv_intensity = view.findViewById(R.id.tv_uv_intensity);
+        tv_led_status = view.findViewById(R.id.tv_led_status);
+
+        // 阈值设置
+        tv_temperature_threshold = view.findViewById(R.id.tv_temperature_threshold);
+        tv_humidity_threshold = view.findViewById(R.id.tv_humidity_threshold);
+        tv_pressure_threshold = view.findViewById(R.id.tv_pressure_threshold);
+        tv_altitude_threshold = view.findViewById(R.id.tv_altitude_threshold);
+        tv_ultraviolet_threshold = view.findViewById(R.id.tv_ultraviolet_threshold);
+
         // 点击事件
         tv_title.setOnClickListener(v -> {
             // 计算当前时间与上次点击时间的间隔
@@ -176,14 +210,6 @@ public class HomeFragment extends Fragment {
         if (refreshRunnable != null) {
             handler.removeCallbacks(refreshRunnable);
         }
-
-        // 更新UI显示配置提示
-//        if (getActivity() != null) {
-//            getActivity().runOnUiThread(() -> {
-//                tvAllData.setText("请点击标题三次进入设置界面，配置OneNet平台信息");
-//                tvAllData.setTextColor(Color.RED);
-//            });
-//        }
     }
 
     // 启动定时刷新任务
@@ -261,10 +287,22 @@ public class HomeFragment extends Fragment {
                 return;
             }
 
-            // 构建数据显示字符串
-            StringBuilder dataBuilder = new StringBuilder();
+            // 存储所有属性数据
+            String temperature = "--";
+            String humidity = "--";
+            String bmp_press = "--";
+            String bmp_asl = "--";
+            String pm2_5 = "--";
+            String light_val = "--";
+            String uv_intensity = "--";
+            String led_status = "--";
+            String temperature_threshold = "--";
+            String humidity_threshold = "--";
+            String pressure_threshold = "--";
+            String altitude_threshold = "--";
+            String ultraviolet_threshold = "--";
 
-            // 遍历所有数据项，直接打印identifier和value
+            // 遍历所有数据项
             for (int i = 0; i < dataArray.length(); i++) {
                 JSONObject item = dataArray.getJSONObject(i);
                 String identifier = item.optString("identifier");
@@ -272,18 +310,86 @@ public class HomeFragment extends Fragment {
 
                 if (valueStr != null && !valueStr.isEmpty()) {
                     Log.d(TAG, identifier + ": " + valueStr);
-                    dataBuilder.append(identifier).append(": " ).append(valueStr).append("\n");
+
+                    // 根据identifier分配到对应的变量
+                    switch (identifier) {
+                        case "temperature":
+                            temperature = valueStr + " °C";
+                            break;
+                        case "humidity":
+                            humidity = valueStr + " %";
+                            break;
+                        case "bmp_press":
+                            bmp_press = valueStr + " hPa";
+                            break;
+                        case "bmp_asl":
+                            bmp_asl = valueStr + " m";
+                            break;
+                        case "pm2_5":
+                            pm2_5 = valueStr;
+                            break;
+                        case "light_val":
+                            light_val = valueStr + " lux";
+                            break;
+                        case "uv_intensity":
+                            uv_intensity = valueStr;
+                            break;
+                        case "LED_status":
+                            led_status = "true".equalsIgnoreCase(valueStr) ? "开启" : "关闭";
+                            break;
+                        case "Temperature_threshold":
+                            temperature_threshold = valueStr + " °C";
+                            break;
+                        case "Humidity_threshold":
+                            humidity_threshold = valueStr + " %";
+                            break;
+                        case "Pressure_threshold":
+                            pressure_threshold = valueStr + " hPa";
+                            break;
+                        case "Altitude_threshold":
+                            altitude_threshold = valueStr + " m";
+                            break;
+                        case "Ultraviolet_Threshold":
+                            ultraviolet_threshold = valueStr;
+                            break;
+                    }
                 } else {
                     Log.w(TAG, "属性 " + identifier + " 的值为空");
-                    dataBuilder.append(identifier).append(": 空值\n");
                 }
             }
 
-            // 在UI线程更新TextView
+            // 在UI线程更新所有TextView
             if (getActivity() != null) {
+                String finalTemperature = temperature;
+                String finalHumidity = humidity;
+                String finalBmp_press = bmp_press;
+                String finalBmp_asl = bmp_asl;
+                String finalPm2_ = pm2_5;
+                String finalLight_val = light_val;
+                String finalUv_intensity = uv_intensity;
+                String finalLed_status = led_status;
+                String finalTemperature_threshold = temperature_threshold;
+                String finalHumidity_threshold = humidity_threshold;
+                String finalPressure_threshold = pressure_threshold;
+                String finalAltitude_threshold = altitude_threshold;
+                String finalUltraviolet_threshold = ultraviolet_threshold;
                 getActivity().runOnUiThread(() -> {
-                    tvAllData.setText(dataBuilder.toString());
-                    tvAllData.setTextColor(Color.BLACK); // 恢复正常颜色
+                    // 更新实时传感器数据
+                    tv_temperature.setText(finalTemperature);
+                    tv_humidity.setText(finalHumidity);
+                    tv_bmp_press.setText(finalBmp_press);
+                    tv_bmp_asl.setText(finalBmp_asl);
+                    tv_pm2_5.setText(finalPm2_);
+                    tv_light_val.setText(finalLight_val);
+                    tv_uv_intensity.setText(finalUv_intensity);
+                    tv_led_status.setText(finalLed_status);
+
+                    // 更新阈值设置
+                    tv_temperature_threshold.setText(finalTemperature_threshold);
+                    tv_humidity_threshold.setText(finalHumidity_threshold);
+                    tv_pressure_threshold.setText(finalPressure_threshold);
+                    tv_altitude_threshold.setText(finalAltitude_threshold);
+                    tv_ultraviolet_threshold.setText(finalUltraviolet_threshold);
                 });
             }
 
