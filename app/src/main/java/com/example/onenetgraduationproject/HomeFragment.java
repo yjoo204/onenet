@@ -63,6 +63,10 @@ public class HomeFragment extends Fragment {
     private TextView tv_altitude_threshold;
     private TextView tv_ultraviolet_threshold;
 
+    // 天气预测
+    private TextView tv_weather_prediction;
+    private TextView tv_weather_reason;
+
     private Handler handler = new Handler(Looper.getMainLooper());
     static String token;
 
@@ -128,6 +132,10 @@ public class HomeFragment extends Fragment {
         tv_pressure_threshold = view.findViewById(R.id.tv_pressure_threshold);
         tv_altitude_threshold = view.findViewById(R.id.tv_altitude_threshold);
         tv_ultraviolet_threshold = view.findViewById(R.id.tv_ultraviolet_threshold);
+
+        // 天气预测
+        tv_weather_prediction = view.findViewById(R.id.tv_weather_prediction);
+        tv_weather_reason = view.findViewById(R.id.tv_weather_reason);
 
         // 点击事件
         tv_title.setOnClickListener(v -> {
@@ -358,10 +366,15 @@ public class HomeFragment extends Fragment {
                 }
             }
 
+            // 天气预测
+            String[] weatherResult = predictWeather(temperature, humidity, bmp_press, uv_intensity, light_val);
+            String prediction = weatherResult[0];
+            String reason = weatherResult[1];
+
             // 在UI线程更新所有TextView
             if (getActivity() != null) {
-                String finalTemperature = temperature;
                 String finalHumidity = humidity;
+                String finalTemperature = temperature;
                 String finalBmp_press = bmp_press;
                 String finalBmp_asl = bmp_asl;
                 String finalPm2_ = pm2_5;
@@ -390,12 +403,123 @@ public class HomeFragment extends Fragment {
                     tv_pressure_threshold.setText(finalPressure_threshold);
                     tv_altitude_threshold.setText(finalAltitude_threshold);
                     tv_ultraviolet_threshold.setText(finalUltraviolet_threshold);
+
+                    // 更新天气预测
+                    tv_weather_prediction.setText(prediction);
+                    tv_weather_reason.setText(reason);
                 });
             }
 
         } catch (JSONException e) {
             Log.e(TAG, "解析数据失败: " + e.getMessage());
             showToast("数据解析失败");
+        }
+    }
+
+    // 天气预测算法
+    private String[] predictWeather(String tempStr, String humidityStr, String pressureStr, String uvStr, String lightStr) {
+        String prediction = "无法预测";
+        String reason = "数据不足";
+
+        try {
+            // 提取数值
+            double temperature = parseDouble(tempStr);
+            double humidity = parseDouble(humidityStr);
+            double pressure = parseDouble(pressureStr);
+            double uv = parseDouble(uvStr);
+            double light = parseDouble(lightStr);
+
+            // 天气预测逻辑
+            if (temperature > 0 && humidity > 0 && pressure > 0) {
+                // 温度高 (>30°C) 且气压低 (<1010 hPa) -> 可能下雨
+                if (temperature > 30 && pressure < 1010) {
+                    if (humidity > 70) {
+                        prediction = "🌧️ 预测：可能下雨";
+                        reason = "温度较高(>30°C)，气压较低(<1010hPa)，湿度较大(>70%)，易形成降雨";
+                    } else {
+                        prediction = "⛅ 预测：多云转雨";
+                        reason = "温度较高(>30°C)，气压较低(<1010hPa)，有降雨趋势";
+                    }
+                }
+                // 温度高 (>30°C) 且气压高 (>1015 hPa) -> 晴天
+                else if (temperature > 30 && pressure > 1015) {
+                    if (uv > 3) {
+                        prediction = "☀️ 预测：晴天炎热";
+                        reason = "温度较高(>30°C)，气压较高(>1015hPa)，紫外线强，天气晴朗";
+                    } else {
+                        prediction = "🌤️ 预测：晴转多云";
+                        reason = "温度较高(>30°C)，气压较高(>1015hPa)，天气较好";
+                    }
+                }
+                // 温度适中 (20-30°C) 且气压适中 -> 多云
+                else if (temperature >= 20 && temperature <= 30 && pressure >= 1010 && pressure <= 1015) {
+                    if (humidity > 60) {
+                        prediction = "☁️ 预测：多云";
+                        reason = "温度适中(20-30°C)，气压适中，湿度较大，多云天气";
+                    } else {
+                        prediction = "🌥️ 预测：晴到多云";
+                        reason = "温度适中(20-30°C)，气压适中，天气较好";
+                    }
+                }
+                // 温度较低 (<20°C) 且气压高 -> 晴天或阴天
+                else if (temperature < 20 && pressure > 1015) {
+                    if (light < 500) {
+                        prediction = "🌫️ 预测：阴天或雾霾";
+                        reason = "温度较低(<20°C)，气压较高(>1015hPa)，光照较弱";
+                    } else {
+                        prediction = "🌞 预测：晴天微凉";
+                        reason = "温度较低(<20°C)，气压较高(>1015hPa)，天气晴朗";
+                    }
+                }
+                // 温度较低 (<20°C) 且气压低 -> 可能有雨或雪
+                else if (temperature < 20 && pressure < 1010) {
+                    if (temperature < 0) {
+                        prediction = "❄️ 预测：可能下雪";
+                        reason = "温度较低(<0°C)，气压较低(<1010hPa)，可能降雪";
+                    } else {
+                        prediction = "🌧️ 预测：可能下雨";
+                        reason = "温度较低(<20°C)，气压较低(<1010hPa)，可能有降雨";
+                    }
+                }
+                // 高湿度 (>80%) 且低气压 -> 潮湿多雨
+                else if (humidity > 80 && pressure < 1010) {
+                    prediction = "💧 预测：潮湿多雨";
+                    reason = "湿度较大(>80%)，气压较低(<1010hPa)，空气潮湿，易降雨";
+                }
+                // 紫外线强 (>5) -> 晴天
+                else if (uv > 5) {
+                    prediction = "☀️ 预测：晴天";
+                    reason = "紫外线强度较高(>5)，阳光充足";
+                }
+                // 光照强 (>10000 lux) -> 晴天
+                else if (light > 10000) {
+                    prediction = "☀️ 预测：晴天";
+                    reason = "光照强度较高(>10000lux)，阳光充足";
+                }
+                // 默认情况
+                else {
+                    prediction = "🌤️ 预测：天气较好";
+                    reason = "各项指标正常，天气状况良好";
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "天气预测解析数据失败: " + e.getMessage());
+        }
+
+        return new String[]{prediction, reason};
+    }
+
+    // 辅助方法：从带单位的字符串中提取数值
+    private double parseDouble(String valueStr) {
+        if (valueStr == null || valueStr.equals("--")) {
+            return 0;
+        }
+        try {
+            // 移除单位，提取数字部分
+            String numStr = valueStr.replaceAll("[^\\d.\\-]", "");
+            return Double.parseDouble(numStr);
+        } catch (NumberFormatException e) {
+            return 0;
         }
     }
 
