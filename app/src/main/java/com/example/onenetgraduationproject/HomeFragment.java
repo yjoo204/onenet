@@ -3,7 +3,6 @@ package com.example.onenetgraduationproject;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -24,19 +23,17 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.io.UnsupportedEncodingException;
 
 import javax.net.ssl.HttpsURLConnection;
 
 public class HomeFragment extends Fragment {
     private static final String TAG = "HomeFragment";
-    // 定义SharedPreferences的文件名
     private static final String PREF_NAME = "OneNetSettings";
 
-    // OneNet平台配置（完全从用户输入获取）
+    // OneNet平台配置
     static String deviceName;
     public static String productId;
     private String userId;
@@ -46,37 +43,36 @@ public class HomeFragment extends Fragment {
     // UI组件
     private TextView tv_title;
 
-    // 实时传感器数据
+    // 实时水质传感器数据
     private TextView tv_temperature;
-    private TextView tv_humidity;
-    private TextView tv_bmp_press;
-    private TextView tv_bmp_asl;
-    private TextView tv_pm2_5;
-    private TextView tv_light_val;
-    private TextView tv_uv_intensity;
-    private TextView tv_led_status;
+    private TextView tv_ph_value;
+    private TextView tv_turbidity_percent;
+    private TextView tv_water_level_percent;
+
+    // 设备状态
+    private TextView tv_heat;
+    private TextView tv_buzzer;
+    private TextView tv_relay1;
+    private TextView tv_relay2;
+    private TextView tv_relay3;
+    private TextView tv_relay4;
+    private TextView tv_relay5;
 
     // 阈值设置
-    private TextView tv_temperature_threshold;
-    private TextView tv_humidity_threshold;
-    private TextView tv_pressure_threshold;
-    private TextView tv_altitude_threshold;
-    private TextView tv_ultraviolet_threshold;
-
-    // 天气预测
-    private TextView tv_weather_prediction;
-    private TextView tv_weather_reason;
+    private TextView tv_tp_yz;
+    private TextView tv_turbiditythreshold;
+    private TextView tv_sw_yz;
+    private TextView tv_sw_high_yz;
+    private TextView tv_temp_water_yz;
 
     private Handler handler = new Handler(Looper.getMainLooper());
     static String token;
-
-    // 刷新任务的Runnable
     private Runnable refreshRunnable;
 
     // 点击计数相关变量
-    private int clickCount = 0; // 记录点击次数
-    private long lastClickTime = 0; // 记录上次点击时间
-    private static final long CLICK_TIME_INTERVAL = 500; // 点击时间间隔阈值（毫秒）
+    private int clickCount = 0;
+    private long lastClickTime = 0;
+    private static final long CLICK_TIME_INTERVAL = 500;
 
     public HomeFragment() {
     }
@@ -84,11 +80,8 @@ public class HomeFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
-
-        // 初始化UI组件
         initViews(view);
         loadSavedData();
-
         return view;
     }
 
@@ -101,7 +94,6 @@ public class HomeFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        // 停止刷新任务
         if (refreshRunnable != null) {
             handler.removeCallbacks(refreshRunnable);
         }
@@ -116,77 +108,60 @@ public class HomeFragment extends Fragment {
     private void initViews(View view) {
         tv_title = view.findViewById(R.id.tv_title);
 
-        // 实时传感器数据
+        // 实时水质传感器数据
         tv_temperature = view.findViewById(R.id.tv_temperature);
-        tv_humidity = view.findViewById(R.id.tv_humidity);
-        tv_bmp_press = view.findViewById(R.id.tv_bmp_press);
-        tv_bmp_asl = view.findViewById(R.id.tv_bmp_asl);
-        tv_pm2_5 = view.findViewById(R.id.tv_pm2_5);
-        tv_light_val = view.findViewById(R.id.tv_light_val);
-        tv_uv_intensity = view.findViewById(R.id.tv_uv_intensity);
-        tv_led_status = view.findViewById(R.id.tv_led_status);
+        tv_ph_value = view.findViewById(R.id.tv_ph_value);
+        tv_turbidity_percent = view.findViewById(R.id.tv_turbidity_percent);
+        tv_water_level_percent = view.findViewById(R.id.tv_water_level_percent);
+
+        // 设备状态
+        tv_heat = view.findViewById(R.id.tv_heat);
+        tv_buzzer = view.findViewById(R.id.tv_buzzer);
+        tv_relay1 = view.findViewById(R.id.tv_relay1);
+        tv_relay2 = view.findViewById(R.id.tv_relay2);
+        tv_relay3 = view.findViewById(R.id.tv_relay3);
+        tv_relay4 = view.findViewById(R.id.tv_relay4);
+        tv_relay5 = view.findViewById(R.id.tv_relay5);
 
         // 阈值设置
-        tv_temperature_threshold = view.findViewById(R.id.tv_temperature_threshold);
-        tv_humidity_threshold = view.findViewById(R.id.tv_humidity_threshold);
-        tv_pressure_threshold = view.findViewById(R.id.tv_pressure_threshold);
-        tv_altitude_threshold = view.findViewById(R.id.tv_altitude_threshold);
-        tv_ultraviolet_threshold = view.findViewById(R.id.tv_ultraviolet_threshold);
+        tv_tp_yz = view.findViewById(R.id.tv_tp_yz);
+        tv_turbiditythreshold = view.findViewById(R.id.tv_turbiditythreshold);
+        tv_sw_yz = view.findViewById(R.id.tv_sw_yz);
+        tv_sw_high_yz = view.findViewById(R.id.tv_sw_high_yz);
+        tv_temp_water_yz = view.findViewById(R.id.tv_temp_water_yz);
 
-        // 天气预测
-        tv_weather_prediction = view.findViewById(R.id.tv_weather_prediction);
-        tv_weather_reason = view.findViewById(R.id.tv_weather_reason);
-
-        // 点击事件
+        // 标题点击事件（三次点击跳转到设置）
         tv_title.setOnClickListener(v -> {
-            // 计算当前时间与上次点击时间的间隔
             long currentTime = System.currentTimeMillis();
-
-            // 如果点击间隔在阈值内，点击次数加一
             if (currentTime - lastClickTime < CLICK_TIME_INTERVAL) {
                 clickCount++;
             } else {
-                // 超过时间间隔，重置点击次数
                 clickCount = 1;
             }
-
-            // 更新上次点击时间
             lastClickTime = currentTime;
 
-            // 点击三次时执行跳转
             if (clickCount == 3) {
-                // 重置点击计数
                 clickCount = 0;
-
-                // 切换到settings界面
                 Intent intent = new Intent(getActivity(), Settings.class);
                 startActivity(intent);
             }
         });
     }
 
-    // 从SharedPreferences加载保存的数据（用户输入的配置）
     private void loadSavedData() {
-        // 获取SharedPreferences实例
         SharedPreferences sharedPreferences = getActivity().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-
-        // 完全从用户输入获取，不使用任何硬编码的默认值
         deviceName = sharedPreferences.getString("deviceName", "");
         productId = sharedPreferences.getString("productId", "");
         userId = sharedPreferences.getString("userId", "");
         userAccessKey = sharedPreferences.getString("userAccessKey", "");
 
-        // 检查是否所有必要的配置都已设置
         if (isConfigurationComplete()) {
-            // 配置完整，启动刷新任务
             startDataRefresh();
         } else {
-            // 配置不完整，提示用户去设置界面
             showConfigurationPrompt();
         }
     }
 
-    // 检查配置是否完整
     private boolean isConfigurationComplete() {
         return deviceName != null && !deviceName.isEmpty() &&
                 productId != null && !productId.isEmpty() &&
@@ -194,12 +169,9 @@ public class HomeFragment extends Fragment {
                 userAccessKey != null && !userAccessKey.isEmpty();
     }
 
-    // 启动数据刷新（仅当配置完整时）
     private void startDataRefresh() {
-        // 构建查询URL
         queryUrl = "https://iot-api.heclouds.com/thingmodel/query-device-property?product_id=" + productId + "&device_name=" + deviceName;
 
-        // 生成Token
         try {
             token = generateToken();
         } catch (Exception e) {
@@ -208,40 +180,31 @@ public class HomeFragment extends Fragment {
             return;
         }
 
-        // 启动刷新任务
         startRefreshTask();
     }
 
-    // 显示配置提示
     private void showConfigurationPrompt() {
-        // 停止正在运行的刷新任务
         if (refreshRunnable != null) {
             handler.removeCallbacks(refreshRunnable);
         }
     }
 
-    // 启动定时刷新任务
     private void startRefreshTask() {
         if (refreshRunnable == null) {
             refreshRunnable = new Runnable() {
                 @Override
                 public void run() {
-                    // 子线程执行网络请求
                     new Thread(() -> getOnenetData()).start();
-                    // 循环执行（3秒一次）
                     handler.postDelayed(this, 3000);
                 }
             };
         }
-        // 移除旧任务（避免重复），重新启动任务
         handler.removeCallbacks(refreshRunnable);
         handler.postDelayed(refreshRunnable, 1000);
         Log.d(TAG, "数据刷新任务已启动");
     }
 
-    // 获取OneNet平台数据
     private void getOnenetData() {
-        // 再次检查配置是否完整（防止在任务运行过程中配置被删除）
         if (!isConfigurationComplete()) {
             showConfigurationPrompt();
             return;
@@ -256,7 +219,6 @@ public class HomeFragment extends Fragment {
             connection.setReadTimeout(3000);
             connection.setRequestMethod("GET");
             connection.setRequestProperty("authorization", token);
-            Log.e(TAG, token);
 
             if (connection.getResponseCode() == HttpsURLConnection.HTTP_OK) {
                 InputStream is = connection.getInputStream();
@@ -280,11 +242,9 @@ public class HomeFragment extends Fragment {
                 connection.disconnect();
             }
         }
-
         Log.d(TAG, "原始获取OneNet平台数据: " + response.toString());
     }
 
-    // 解析JSON并展示数据
     private void parseAndShowData(String json) {
         try {
             JSONObject jsonObject = new JSONObject(json);
@@ -295,20 +255,25 @@ public class HomeFragment extends Fragment {
                 return;
             }
 
-            // 存储所有属性数据
+            // 初始化所有变量为默认值
             String temperature = "--";
-            String humidity = "--";
-            String bmp_press = "--";
-            String bmp_asl = "--";
-            String pm2_5 = "--";
-            String light_val = "--";
-            String uv_intensity = "--";
-            String led_status = "--";
-            String temperature_threshold = "--";
-            String humidity_threshold = "--";
-            String pressure_threshold = "--";
-            String altitude_threshold = "--";
-            String ultraviolet_threshold = "--";
+            String ph_value = "--";
+            String turbidity_percent = "--";
+            String water_level_percent = "--";
+
+            String heat = "--";
+            String buzzer = "--";
+            String relay1 = "--";
+            String relay2 = "--";
+            String relay3 = "--";
+            String relay4 = "--";
+            String relay5 = "--";
+
+            String tp_yz = "--";
+            String turbiditythreshold = "--";
+            String sw_yz = "--";
+            String sw_high_yz = "--";
+            String temp_water_yz = "--";
 
             // 遍历所有数据项
             for (int i = 0; i < dataArray.length(); i++) {
@@ -321,44 +286,58 @@ public class HomeFragment extends Fragment {
 
                     // 根据identifier分配到对应的变量
                     switch (identifier) {
+                        // 水质传感器数据
                         case "temperature":
                             temperature = valueStr + " °C";
                             break;
-                        case "humidity":
-                            humidity = valueStr + " %";
+                        case "ph_value":
+                            ph_value = valueStr;
                             break;
-                        case "bmp_press":
-                            bmp_press = valueStr + " hPa";
+                        case "turbidity_percent":
+                            turbidity_percent = valueStr + " %";
                             break;
-                        case "bmp_asl":
-                            bmp_asl = valueStr + " m";
+                        case "water_level_percent":
+                            water_level_percent = valueStr + " %";
                             break;
-                        case "pm2_5":
-                            pm2_5 = valueStr;
+
+                        // 设备状态
+                        case "Heat":
+                            heat = "true".equalsIgnoreCase(valueStr) ? "开启" : "关闭";
                             break;
-                        case "light_val":
-                            light_val = valueStr + " lux";
+                        case "buzzer":
+                            buzzer = "true".equalsIgnoreCase(valueStr) ? "开启" : "关闭";
                             break;
-                        case "uv_intensity":
-                            uv_intensity = valueStr;
+                        case "RELAY1":
+                            relay1 = "true".equalsIgnoreCase(valueStr) ? "运行" : "停止";
                             break;
-                        case "LED_status":
-                            led_status = "true".equalsIgnoreCase(valueStr) ? "开启" : "关闭";
+                        case "RELAY2":
+                            relay2 = "true".equalsIgnoreCase(valueStr) ? "运行" : "停止";
                             break;
-                        case "Temperature_threshold":
-                            temperature_threshold = valueStr + " °C";
+                        case "RELAY3":
+                            relay3 = "true".equalsIgnoreCase(valueStr) ? "运行" : "停止";
                             break;
-                        case "Humidity_threshold":
-                            humidity_threshold = valueStr + " %";
+                        case "RELAY4":
+                            relay4 = "true".equalsIgnoreCase(valueStr) ? "运行" : "停止";
                             break;
-                        case "Pressure_threshold":
-                            pressure_threshold = valueStr + " hPa";
+                        case "RELAY5":
+                            relay5 = "true".equalsIgnoreCase(valueStr) ? "运行" : "停止";
                             break;
-                        case "Altitude_threshold":
-                            altitude_threshold = valueStr + " m";
+
+                        // 阈值设置
+                        case "tp_yz":
+                            tp_yz = valueStr + " °C";
                             break;
-                        case "Ultraviolet_Threshold":
-                            ultraviolet_threshold = valueStr;
+                        case "Turbiditythreshold":
+                            turbiditythreshold = valueStr;
+                            break;
+                        case "sw_yz":
+                            sw_yz = valueStr + " %";
+                            break;
+                        case "sw_high_yz":
+                            sw_high_yz = valueStr + " %";
+                            break;
+                        case "temp_water_yz":
+                            temp_water_yz = valueStr + " °C";
                             break;
                     }
                 } else {
@@ -366,47 +345,46 @@ public class HomeFragment extends Fragment {
                 }
             }
 
-            // 天气预测
-            String[] weatherResult = predictWeather(temperature, humidity, bmp_press, uv_intensity, light_val);
-            String prediction = weatherResult[0];
-            String reason = weatherResult[1];
-
             // 在UI线程更新所有TextView
             if (getActivity() != null) {
-                String finalHumidity = humidity;
                 String finalTemperature = temperature;
-                String finalBmp_press = bmp_press;
-                String finalBmp_asl = bmp_asl;
-                String finalPm2_ = pm2_5;
-                String finalLight_val = light_val;
-                String finalUv_intensity = uv_intensity;
-                String finalLed_status = led_status;
-                String finalTemperature_threshold = temperature_threshold;
-                String finalHumidity_threshold = humidity_threshold;
-                String finalPressure_threshold = pressure_threshold;
-                String finalAltitude_threshold = altitude_threshold;
-                String finalUltraviolet_threshold = ultraviolet_threshold;
+                String finalPh_value = ph_value;
+                String finalTurbidity_percent1 = turbidity_percent;
+                String finalWater_level_percent1 = water_level_percent;
+                String finalHeat = heat;
+                String finalBuzzer = buzzer;
+                String finalRelay = relay1;
+                String finalRelay1 = relay2;
+                String finalRelay2 = relay3;
+                String finalRelay3 = relay4;
+                String finalRelay4 = relay5;
+                String finalTp_yz = tp_yz;
+                String finalTurbiditythreshold = turbiditythreshold;
+                String finalSw_yz = sw_yz;
+                String finalSw_high_yz = sw_high_yz;
+                String finalTemp_water_yz = temp_water_yz;
                 getActivity().runOnUiThread(() -> {
-                    // 更新实时传感器数据
+                    // 更新实时水质传感器数据
                     tv_temperature.setText(finalTemperature);
-                    tv_humidity.setText(finalHumidity);
-                    tv_bmp_press.setText(finalBmp_press);
-                    tv_bmp_asl.setText(finalBmp_asl);
-                    tv_pm2_5.setText(finalPm2_);
-                    tv_light_val.setText(finalLight_val);
-                    tv_uv_intensity.setText(finalUv_intensity);
-                    tv_led_status.setText(finalLed_status);
+                    tv_ph_value.setText(finalPh_value);
+                    tv_turbidity_percent.setText(finalTurbidity_percent1);
+                    tv_water_level_percent.setText(finalWater_level_percent1);
+
+                    // 更新设备状态
+                    tv_heat.setText(finalHeat);
+                    tv_buzzer.setText(finalBuzzer);
+                    tv_relay1.setText(finalRelay);
+                    tv_relay2.setText(finalRelay1);
+                    tv_relay3.setText(finalRelay2);
+                    tv_relay4.setText(finalRelay3);
+                    tv_relay5.setText(finalRelay4);
 
                     // 更新阈值设置
-                    tv_temperature_threshold.setText(finalTemperature_threshold);
-                    tv_humidity_threshold.setText(finalHumidity_threshold);
-                    tv_pressure_threshold.setText(finalPressure_threshold);
-                    tv_altitude_threshold.setText(finalAltitude_threshold);
-                    tv_ultraviolet_threshold.setText(finalUltraviolet_threshold);
-
-                    // 更新天气预测
-                    tv_weather_prediction.setText(prediction);
-                    tv_weather_reason.setText(reason);
+                    tv_tp_yz.setText(finalTp_yz);
+                    tv_turbiditythreshold.setText(finalTurbiditythreshold);
+                    tv_sw_yz.setText(finalSw_yz);
+                    tv_sw_high_yz.setText(finalSw_high_yz);
+                    tv_temp_water_yz.setText(finalTemp_water_yz);
                 });
             }
 
@@ -416,114 +394,6 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    // 天气预测算法
-    private String[] predictWeather(String tempStr, String humidityStr, String pressureStr, String uvStr, String lightStr) {
-        String prediction = "无法预测";
-        String reason = "数据不足";
-
-        try {
-            // 提取数值
-            double temperature = parseDouble(tempStr);
-            double humidity = parseDouble(humidityStr);
-            double pressure = parseDouble(pressureStr);
-            double uv = parseDouble(uvStr);
-            double light = parseDouble(lightStr);
-
-            // 天气预测逻辑
-            if (temperature > 0 && humidity > 0 && pressure > 0) {
-                // 温度高 (>30°C) 且气压低 (<1010 hPa) -> 可能下雨
-                if (temperature > 30 && pressure < 1010) {
-                    if (humidity > 70) {
-                        prediction = "🌧️ 预测：可能下雨";
-                        reason = "温度较高(>30°C)，气压较低(<1010hPa)，湿度较大(>70%)，易形成降雨";
-                    } else {
-                        prediction = "⛅ 预测：多云转雨";
-                        reason = "温度较高(>30°C)，气压较低(<1010hPa)，有降雨趋势";
-                    }
-                }
-                // 温度高 (>30°C) 且气压高 (>1015 hPa) -> 晴天
-                else if (temperature > 30 && pressure > 1015) {
-                    if (uv > 3) {
-                        prediction = "☀️ 预测：晴天炎热";
-                        reason = "温度较高(>30°C)，气压较高(>1015hPa)，紫外线强，天气晴朗";
-                    } else {
-                        prediction = "🌤️ 预测：晴转多云";
-                        reason = "温度较高(>30°C)，气压较高(>1015hPa)，天气较好";
-                    }
-                }
-                // 温度适中 (20-30°C) 且气压适中 -> 多云
-                else if (temperature >= 20 && temperature <= 30 && pressure >= 1010 && pressure <= 1015) {
-                    if (humidity > 60) {
-                        prediction = "☁️ 预测：多云";
-                        reason = "温度适中(20-30°C)，气压适中，湿度较大，多云天气";
-                    } else {
-                        prediction = "🌥️ 预测：晴到多云";
-                        reason = "温度适中(20-30°C)，气压适中，天气较好";
-                    }
-                }
-                // 温度较低 (<20°C) 且气压高 -> 晴天或阴天
-                else if (temperature < 20 && pressure > 1015) {
-                    if (light < 500) {
-                        prediction = "🌫️ 预测：阴天或雾霾";
-                        reason = "温度较低(<20°C)，气压较高(>1015hPa)，光照较弱";
-                    } else {
-                        prediction = "🌞 预测：晴天微凉";
-                        reason = "温度较低(<20°C)，气压较高(>1015hPa)，天气晴朗";
-                    }
-                }
-                // 温度较低 (<20°C) 且气压低 -> 可能有雨或雪
-                else if (temperature < 20 && pressure < 1010) {
-                    if (temperature < 0) {
-                        prediction = "❄️ 预测：可能下雪";
-                        reason = "温度较低(<0°C)，气压较低(<1010hPa)，可能降雪";
-                    } else {
-                        prediction = "🌧️ 预测：可能下雨";
-                        reason = "温度较低(<20°C)，气压较低(<1010hPa)，可能有降雨";
-                    }
-                }
-                // 高湿度 (>80%) 且低气压 -> 潮湿多雨
-                else if (humidity > 80 && pressure < 1010) {
-                    prediction = "💧 预测：潮湿多雨";
-                    reason = "湿度较大(>80%)，气压较低(<1010hPa)，空气潮湿，易降雨";
-                }
-                // 紫外线强 (>5) -> 晴天
-                else if (uv > 5) {
-                    prediction = "☀️ 预测：晴天";
-                    reason = "紫外线强度较高(>5)，阳光充足";
-                }
-                // 光照强 (>10000 lux) -> 晴天
-                else if (light > 10000) {
-                    prediction = "☀️ 预测：晴天";
-                    reason = "光照强度较高(>10000lux)，阳光充足";
-                }
-                // 默认情况
-                else {
-                    prediction = "🌤️ 预测：天气较好";
-                    reason = "各项指标正常，天气状况良好";
-                }
-            }
-        } catch (Exception e) {
-            Log.w(TAG, "天气预测解析数据失败: " + e.getMessage());
-        }
-
-        return new String[]{prediction, reason};
-    }
-
-    // 辅助方法：从带单位的字符串中提取数值
-    private double parseDouble(String valueStr) {
-        if (valueStr == null || valueStr.equals("--")) {
-            return 0;
-        }
-        try {
-            // 移除单位，提取数字部分
-            String numStr = valueStr.replaceAll("[^\\d.\\-]", "");
-            return Double.parseDouble(numStr);
-        } catch (NumberFormatException e) {
-            return 0;
-        }
-    }
-
-    // 生成认证Token
     private String generateToken() throws UnsupportedEncodingException, NoSuchAlgorithmException, InvalidKeyException {
         String version = "2020-05-29";
         String resourceName = "userid/" + userId;
@@ -532,7 +402,6 @@ public class HomeFragment extends Fragment {
         return TokenUtil.assembleToken(version, resourceName, expirationTime, signatureMethod, userAccessKey);
     }
 
-    // 显示Toast消息的辅助方法
     private void showToast(String message) {
         if (getActivity() != null && getContext() != null) {
             getActivity().runOnUiThread(() -> Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show());

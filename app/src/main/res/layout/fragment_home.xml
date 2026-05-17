@@ -16,72 +16,24 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
             android:background="#ffffff"
-            android:elevation="2dp"
             android:gravity="center"
             android:orientation="horizontal"
-            android:padding="16dp">
+            android:layout_marginBottom="16dp"
+            android:padding="16dp"
+            android:elevation="2dp">
 
             <TextView
                 android:id="@+id/tv_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="数据查看"
+                android:text="水质监控"
                 android:textColor="@color/black"
                 android:textSize="24sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:background="#ffffff"
-            android:elevation="2dp"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:text="天气预测"
-                android:textColor="#1E293B"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="#F0FDF4"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:id="@+id/tv_weather_prediction"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:minHeight="60dp"
-                    android:text="正在分析数据..."
-                    android:textColor="#059669"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tv_weather_reason"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center"
-                    android:text=""
-                    android:textColor="#047857"
-                    android:textSize="14sp" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- 实时传感器数据卡片 -->
+        <!-- 实时水质传感器数据卡片 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -89,13 +41,12 @@
             android:orientation="vertical"
             android:padding="16dp"
             android:layout_marginBottom="16dp"
-            android:elevation="2dp"
-            android:radius="8dp">
+            android:elevation="2dp">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="实时传感器数据"
+                android:text="实时水质数据"
                 android:textColor="#1E293B"
                 android:textSize="18sp"
                 android:textStyle="bold"
@@ -106,21 +57,21 @@
                 android:layout_height="wrap_content"
                 android:columnCount="2">
 
-                <!-- 温度 -->
+                <!-- 水温 -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
                     android:orientation="vertical"
                     android:padding="12dp"
-                    android:background="#F8FAFC"
+                    android:background="#FEE2E2"
                     android:layout_margin="4dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="温度"
-                        android:textColor="#64748B"
+                        android:text="水温"
+                        android:textColor="#991B1B"
                         android:textSize="14sp" />
 
                     <TextView
@@ -128,203 +79,308 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="--"
-                        android:textColor="#EF4444"
+                        android:textColor="#DC2626"
                         android:textSize="24sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- 湿度 -->
+                <!-- pH值 -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
                     android:orientation="vertical"
                     android:padding="12dp"
-                    android:background="#F8FAFC"
+                    android:background="#DBEAFE"
                     android:layout_margin="4dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="湿度"
-                        android:textColor="#64748B"
+                        android:text="pH值"
+                        android:textColor="#1E40AF"
                         android:textSize="14sp" />
 
                     <TextView
-                        android:id="@+id/tv_humidity"
+                        android:id="@+id/tv_ph_value"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="--"
-                        android:textColor="#3B82F6"
+                        android:textColor="#2563EB"
                         android:textSize="24sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- 气压 -->
+                <!-- 浑浊度 -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
                     android:orientation="vertical"
                     android:padding="12dp"
-                    android:background="#F8FAFC"
+                    android:background="#FEF3C7"
                     android:layout_margin="4dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="气压"
-                        android:textColor="#64748B"
+                        android:text="浑浊度"
+                        android:textColor="#92400E"
                         android:textSize="14sp" />
 
                     <TextView
-                        android:id="@+id/tv_bmp_press"
+                        android:id="@+id/tv_turbidity_percent"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="--"
-                        android:textColor="#10B981"
+                        android:textColor="#B45309"
                         android:textSize="24sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- 海拔 -->
+                <!-- 水位 -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
                     android:orientation="vertical"
                     android:padding="12dp"
-                    android:background="#F8FAFC"
+                    android:background="#D1FAE5"
                     android:layout_margin="4dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="海拔"
-                        android:textColor="#64748B"
+                        android:text="水位"
+                        android:textColor="#065F46"
                         android:textSize="14sp" />
 
                     <TextView
-                        android:id="@+id/tv_bmp_asl"
+                        android:id="@+id/tv_water_level_percent"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="--"
-                        android:textColor="#8B5CF6"
-                        android:textSize="24sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- PM2.5 -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:orientation="vertical"
-                    android:padding="12dp"
-                    android:background="#F8FAFC"
-                    android:layout_margin="4dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="PM2.5"
-                        android:textColor="#64748B"
-                        android:textSize="14sp" />
-
-                    <TextView
-                        android:id="@+id/tv_pm2_5"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="--"
-                        android:textColor="#F59E0B"
-                        android:textSize="24sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- 光照 -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:orientation="vertical"
-                    android:padding="12dp"
-                    android:background="#F8FAFC"
-                    android:layout_margin="4dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="光照"
-                        android:textColor="#64748B"
-                        android:textSize="14sp" />
-
-                    <TextView
-                        android:id="@+id/tv_light_val"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="--"
-                        android:textColor="#EAB308"
-                        android:textSize="24sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- 紫外线强度 -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:orientation="vertical"
-                    android:padding="12dp"
-                    android:background="#F8FAFC"
-                    android:layout_margin="4dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="紫外线"
-                        android:textColor="#64748B"
-                        android:textSize="14sp" />
-
-                    <TextView
-                        android:id="@+id/tv_uv_intensity"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="--"
-                        android:textColor="#EC4899"
-                        android:textSize="24sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- LED状态 -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:orientation="vertical"
-                    android:padding="12dp"
-                    android:background="#F8FAFC"
-                    android:layout_margin="4dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="LED状态"
-                        android:textColor="#64748B"
-                        android:textSize="14sp" />
-
-                    <TextView
-                        android:id="@+id/tv_led_status"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="--"
-                        android:textColor="#10B981"
+                        android:textColor="#059669"
                         android:textSize="24sp"
                         android:textStyle="bold" />
                 </LinearLayout>
             </GridLayout>
         </LinearLayout>
 
-        <!-- 天气预测卡片 -->
+        <!-- 设备控制状态卡片 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#ffffff"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp"
+            android:elevation="2dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="设备状态"
+                android:textColor="#1E293B"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="2">
+
+                <!-- 加热 -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:orientation="vertical"
+                    android:padding="12dp"
+                    android:background="#FEE2E2"
+                    android:layout_margin="4dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="加热"
+                        android:textColor="#991B1B"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tv_heat"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textColor="#DC2626"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- 蜂鸣器 -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:orientation="vertical"
+                    android:padding="12dp"
+                    android:background="#FCE7F3"
+                    android:layout_margin="4dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="蜂鸣器"
+                        android:textColor="#831843"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tv_buzzer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textColor="#BE185D"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- 碱水泵 RELAY1 -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:orientation="vertical"
+                    android:padding="12dp"
+                    android:background="#DBEAFE"
+                    android:layout_margin="4dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="碱水泵"
+                        android:textColor="#1E40AF"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tv_relay1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textColor="#2563EB"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- 酸水泵 RELAY2 -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:orientation="vertical"
+                    android:padding="12dp"
+                    android:background="#EDE9FE"
+                    android:layout_margin="4dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="酸水泵"
+                        android:textColor="#5B21B6"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tv_relay2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textColor="#7C3AED"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- 加水泵 RELAY3 -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:orientation="vertical"
+                    android:padding="12dp"
+                    android:background="#D1FAE5"
+                    android:layout_margin="4dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="加水泵"
+                        android:textColor="#065F46"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tv_relay3"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textColor="#059669"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- 抽水泵 RELAY4 -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:orientation="vertical"
+                    android:padding="12dp"
+                    android:background="#FEF3C7"
+                    android:layout_margin="4dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="抽水泵"
+                        android:textColor="#92400E"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tv_relay4"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textColor="#B45309"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- 循环水泵 RELAY5 -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:orientation="vertical"
+                    android:padding="12dp"
+                    android:background="#ECFDF5"
+                    android:layout_margin="4dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="循环水泵"
+                        android:textColor="#047857"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tv_relay5"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textColor="#059669"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </GridLayout>
+        </LinearLayout>
 
         <!-- 阈值设置卡片 -->
         <LinearLayout
@@ -350,7 +406,34 @@
                 android:layout_height="wrap_content"
                 android:columnCount="2">
 
-                <!-- 温度阈值 -->
+                <!-- 水温阈值 -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:orientation="vertical"
+                    android:padding="12dp"
+                    android:background="#FEE2E2"
+                    android:layout_margin="4dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="水温阈值"
+                        android:textColor="#991B1B"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tv_tp_yz"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textColor="#DC2626"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- 浑浊度阈值 -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -363,12 +446,12 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="温度阈值"
+                        android:text="浑浊度阈值"
                         android:textColor="#92400E"
                         android:textSize="14sp" />
 
                     <TextView
-                        android:id="@+id/tv_temperature_threshold"
+                        android:id="@+id/tv_turbiditythreshold"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="--"
@@ -377,7 +460,7 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- 湿度阈值 -->
+                <!-- 水位最低阈值 -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -390,21 +473,21 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="湿度阈值"
+                        android:text="水位最低阈值"
                         android:textColor="#1E40AF"
                         android:textSize="14sp" />
 
                     <TextView
-                        android:id="@+id/tv_humidity_threshold"
+                        android:id="@+id/tv_sw_yz"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="--"
-                        android:textColor="#1D4ED8"
+                        android:textColor="#2563EB"
                         android:textSize="20sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- 气压阈值 -->
+                <!-- 水位最高阈值 -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -417,12 +500,12 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="气压阈值"
+                        android:text="水位最高阈值"
                         android:textColor="#065F46"
                         android:textSize="14sp" />
 
                     <TextView
-                        android:id="@+id/tv_pressure_threshold"
+                        android:id="@+id/tv_sw_high_yz"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="--"
@@ -431,7 +514,7 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- 海拔阈值 -->
+                <!-- 水位最高 -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -444,43 +527,16 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="海拔阈值"
+                        android:text="水位最高"
                         android:textColor="#5B21B6"
                         android:textSize="14sp" />
 
                     <TextView
-                        android:id="@+id/tv_altitude_threshold"
+                        android:id="@+id/tv_temp_water_yz"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="--"
                         android:textColor="#7C3AED"
-                        android:textSize="20sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- 紫外线阈值 -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:orientation="vertical"
-                    android:padding="12dp"
-                    android:background="#FCE7F3"
-                    android:layout_margin="4dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="紫外线阈值"
-                        android:textColor="#831843"
-                        android:textSize="14sp" />
-
-                    <TextView
-                        android:id="@+id/tv_ultraviolet_threshold"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="--"
-                        android:textColor="#BE185D"
                         android:textSize="20sp"
                         android:textStyle="bold" />
                 </LinearLayout>

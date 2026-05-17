@@ -1,11 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="property_keys">
-        <item>Altitude_threshold</item>
-        <item>Humidity_threshold</item>
-        <item>LED_status</item>
-        <item>Pressure_threshold</item>
-        <item>Temperature_threshold</item>
-        <item>Ultraviolet_Threshold</item>
+        <item>Heat</item>
+        <item>RELAY1</item>
+        <item>RELAY2</item>
+        <item>RELAY3</item>
+        <item>RELAY4</item>
+        <item>RELAY5</item>
+        <item>Turbiditythreshold</item>
+        <item>buzzer</item>
+        <item>ph_value</item>
+        <item>sw_high_yz</item>
+        <item>sw_yz</item>
+        <item>temp_water_yz</item>
+        <item>temperature</item>
+        <item>tp_yz</item>
+        <item>turbidity_percent</item>
+        <item>water_level_percent</item>
     </string-array>
 </resources>

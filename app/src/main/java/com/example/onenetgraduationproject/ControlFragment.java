@@ -29,9 +29,9 @@ import javax.net.ssl.HttpsURLConnection;
 public class ControlFragment extends Fragment {
     private static final String TAG = "ControlFragment";
 
-    // MQTT配置
-    //private String publishTopic = "$sys/v79fer6hC4/pi1/thing/property/post";
+    // 设置设备属性URL
     private String setDevicePropertyUrl = "https://iot-api.heclouds.com/thingmodel/set-device-property";
+
     // UI组件
     private Spinner spPropertyKey;
     private EditText etPropertyKey;
@@ -68,10 +68,8 @@ public class ControlFragment extends Fragment {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 String selectedItem = parent.getItemAtPosition(position).toString();
-                // 当选中的不是第一个提示项时，将选中内容填充到EditText
-                if (position > 0) {
-                    etPropertyKey.setText(selectedItem);
-                }
+                // 当选中项时，将选中内容填充到EditText
+                etPropertyKey.setText(selectedItem);
             }
 
             @Override
@@ -114,32 +112,12 @@ public class ControlFragment extends Fragment {
             Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show();
         }
     }
-    /**********************************************
+
+    /**
      * 设置设备属性
      * @param propertyKey 属性名
      * @param propertyValue 属性值
-    // 设置设备属性URL
-    //POST http(s)://iot-api.heclouds.com/thingmodel/set-device-property
-    //Content-type: application/json
-    //{
-    //    "product_id": "9MaNe52pNO",
-    //    "device_name": "no001",
-    //    "params": {
-    //        "switch": true,           // bool
-    //        "text": "hello",          // string
-    //        "humidity": 12 ,          // int32
-    //        "number": 1564448722123,        // int64
-    //        "temperature": 30.2             // float
-    //        "lng": 3.1234567890123456789,   // double
-    //        "type": 1,                      // enum
-    //        "error": 256,                   // bitmap
-    //        "event":  {                     // struct
-    //            "a": 1,
-    //            "b": true
-    //        }
-    //    }
-    //}
-     ********************************************************/
+     */
     private void setDeviceProperty(String propertyKey, Object propertyValue) {
         // 确保网络请求在子线程中执行
         new Thread(() -> {
@@ -148,17 +126,26 @@ public class ControlFragment extends Fragment {
                 // 尝试将字符串类型的propertyValue转换为合适的数值类型
                 Object finalValue = propertyValue;
                 if (propertyValue instanceof String) {
-                    String stringValue = (String) propertyValue;
-                    try {
-                        // 尝试解析为数字
-                        if (stringValue.contains(".")) {
-                            finalValue = Double.parseDouble(stringValue);
-                        } else {
-                            finalValue = Integer.parseInt(stringValue);
+                    // 关键修复：先去除前后空格
+                    String stringValue = ((String) propertyValue).trim();
+
+                    // 尝试解析为布尔值
+                    if (stringValue.equalsIgnoreCase("true")) {
+                        finalValue = true;  // 使用原始boolean类型
+                    } else if (stringValue.equalsIgnoreCase("false")) {
+                        finalValue = false; // 使用原始boolean类型
+                    } else {
+                        try {
+                            // 尝试解析为数字
+                            if (stringValue.contains(".")) {
+                                finalValue = Double.parseDouble(stringValue);
+                            } else {
+                                finalValue = Integer.parseInt(stringValue);
+                            }
+                        } catch (NumberFormatException e) {
+                            // 解析失败，保持原字符串类型
+                            Log.d(TAG, "属性值无法解析为数字，作为字符串处理: " + stringValue);
                         }
-                    } catch (NumberFormatException e) {
-                        // 解析失败，保持原字符串类型
-                        Log.d(TAG, "属性值无法解析为数字，作为字符串处理: " + stringValue);
                     }
                 }
 
@@ -188,8 +175,10 @@ public class ControlFragment extends Fragment {
                 outputStream.write(requestBody.toString().getBytes(StandardCharsets.UTF_8));
                 outputStream.flush();
                 outputStream.close();
+
                 // 打印请求体
                 Log.d(TAG, "设置设备属性请求体: " + requestBody.toString());
+
                 // 获取响应码
                 int responseCode = connection.getResponseCode();
                 if (responseCode == HttpURLConnection.HTTP_OK) {
