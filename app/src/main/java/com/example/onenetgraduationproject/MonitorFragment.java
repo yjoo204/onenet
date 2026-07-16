@@ -11,8 +11,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
+import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
@@ -20,10 +22,6 @@ import androidx.fragment.app.Fragment;
 import com.github.AAChartModel.AAChartCore.AAChartCreator.AAChartModel;
 import com.github.AAChartModel.AAChartCore.AAChartCreator.AAChartView;
 import com.github.AAChartModel.AAChartCore.AAChartCreator.AASeriesElement;
-import com.github.AAChartModel.AAChartCore.AAOptionsModel.AADataLabels;
-import com.github.AAChartModel.AAChartCore.AAOptionsModel.AATitle;
-import com.github.AAChartModel.AAChartCore.AAOptionsModel.AAXAxis;
-import com.github.AAChartModel.AAChartCore.AAOptionsModel.AAYAxis;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -41,10 +39,22 @@ import java.util.List;
 import javax.net.ssl.HttpsURLConnection;
 
 public class MonitorFragment extends Fragment {
-    private EditText et_history_identifier;
-    private Button btn_history_data;
+    private Spinner spPropertySelect;
+    private Spinner spTimeRange;
+    private Button btnQuery;
     private AAChartView aaChartView;
+    private TextView tvMinValue;
+    private TextView tvAvgValue;
+    private TextView tvMaxValue;
     private Handler handler;
+
+    // 属性列表
+    private String[] propertyList = {"temp", "hum", "adc2_raw", "adc2_v"};
+    private String[] propertyNames = {"温度", "湿度", "红外", "烟雾"};
+
+    // 时间范围选项
+    private String[] timeRangeOptions = {"1小时", "6小时", "12小时", "24小时"};
+    private long[] timeRangeValues = {3600000, 21600000, 43200000, 86400000}; // 毫秒
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -60,22 +70,41 @@ public class MonitorFragment extends Fragment {
     }
 
     private void initViews(View view) {
-        et_history_identifier = view.findViewById(R.id.et_history_identifier);
-        btn_history_data = view.findViewById(R.id.btn_history_data);
+        spPropertySelect = view.findViewById(R.id.sp_property_select);
+        spTimeRange = view.findViewById(R.id.sp_time_range);
+        btnQuery = view.findViewById(R.id.btn_query);
         aaChartView = view.findViewById(R.id.AAChartView);
+        tvMinValue = view.findViewById(R.id.tv_min_value);
+        tvAvgValue = view.findViewById(R.id.tv_avg_value);
+        tvMaxValue = view.findViewById(R.id.tv_max_value);
         handler = new Handler(Looper.getMainLooper());
 
+        // 设置属性选择Spinner
+        ArrayAdapter<String> propertyAdapter = new ArrayAdapter<>(getContext(),
+                android.R.layout.simple_spinner_item, propertyNames);
+        propertyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spPropertySelect.setAdapter(propertyAdapter);
+
+        // 设置时间范围Spinner
+        ArrayAdapter<String> timeAdapter = new ArrayAdapter<>(getContext(),
+                android.R.layout.simple_spinner_item, timeRangeOptions);
+        timeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spTimeRange.setAdapter(timeAdapter);
+
         // 设置按钮点击事件
-        btn_history_data.setOnClickListener(v -> {
-            // 获取用户输入的标识符
-            String identifier = et_history_identifier.getText().toString().trim();
-            if (identifier.isEmpty()) {
-                Toast.makeText(getActivity(), "请输入属性标识符", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            // 获取最近24小时的历史数据
+        btnQuery.setOnClickListener(v -> {
+            // 获取选中的属性
+            int propertyIndex = spPropertySelect.getSelectedItemPosition();
+            String identifier = propertyList[propertyIndex];
+
+            // 获取选中的时间范围
+            int timeIndex = spTimeRange.getSelectedItemPosition();
+            long timeRange = timeRangeValues[timeIndex];
+
+            // 计算时间范围
             long endTime = System.currentTimeMillis();
-            long startTime = endTime - (24 * 60 * 60 * 1000); // 24小时前
+            long startTime = endTime - timeRange;
+
             // 在子线程执行历史数据请求
             new Thread(() -> getHistoryData(identifier, startTime, endTime)).start();
         });
@@ -161,20 +190,44 @@ public class MonitorFragment extends Fragment {
                     values.add(value);
                 }
 
+                // 计算统计数据
+                double min = Double.MAX_VALUE;
+                double max = Double.MIN_VALUE;
+                double sum = 0;
+                for (Double value : values) {
+                    min = Math.min(min, value);
+                    max = Math.max(max, value);
+                    sum += value;
+                }
+                double avg = values.size() > 0 ? sum / values.size() : 0;
+
+                // 获取当前选中的属性名称
+                int propertyIndex = spPropertySelect.getSelectedItemPosition();
+                String propertyName = propertyNames[propertyIndex];
+
                 // 在主线程更新UI
+                double finalMin = min;
+                double finalMax = max;
+                double finalMax1 = max;
                 handler.post(() -> {
+                    // 更新统计数据
+                    tvMinValue.setText(String.format("%.1f", finalMin));
+                    tvAvgValue.setText(String.format("%.1f", avg));
+                    tvMaxValue.setText(String.format("%.1f", finalMax1));
+
                     // 创建图表模型
                     AAChartModel aaChartModel = new AAChartModel()
                             .chartType("line")
-                            .title("历史数据趋势图")
-                            .subtitle("过去24小时数据变化")
+                            .title(propertyName + "历史趋势")
+                            .subtitle("数据可视化")
                             .backgroundColor("#ffffff")
-                            .dataLabelsEnabled(true)
+                            .dataLabelsEnabled(false)
                             .categories(xAxisCategories.toArray(new String[0]))
                             .series(new AASeriesElement[]{
                                     new AASeriesElement()
-                                            .name(et_history_identifier.getText().toString().trim())
+                                            .name(propertyName)
                                             .data(values.toArray(new Double[0]))
+                                            .color("#4A90D9")
                             });
 
                     // 绘制图表

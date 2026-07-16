@@ -17,7 +17,6 @@ public class MainActivity extends AppCompatActivity {
     private ControlFragment controlFragment;
     private MonitorFragment monitorFragment;
     private Handler handler;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -31,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
         // 创建Fragment实例
         homeFragment = new HomeFragment();
         controlFragment = new ControlFragment();
+        monitorFragment = new MonitorFragment();
         monitorFragment = new MonitorFragment();
 
         // 设置默认Fragment
