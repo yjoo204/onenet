@@ -44,7 +44,7 @@ public class HomeFragment extends Fragment {
     private String queryUrl;
 
     // UI组件
-    private TextView tvAllData,tv_title;
+    private TextView tvTitle, tvTemp, tvHum, tvInfrared, tvSmoke, tvBuzzer, tvSg90, tvUpdateTime;
 
     private Handler handler = new Handler(Looper.getMainLooper());
     static String token;
@@ -93,30 +93,28 @@ public class HomeFragment extends Fragment {
     }
 
     private void initViews(View view) {
-        tvAllData = view.findViewById(R.id.tv_all_data);
-        tv_title = view.findViewById(R.id.tv_title);
-        // 点击事件
-        tv_title.setOnClickListener(v -> {
-            // 计算当前时间与上次点击时间的间隔
-            long currentTime = System.currentTimeMillis();
+        // 初始化所有UI组件
+        tvTitle = view.findViewById(R.id.tv_title);
+        tvTemp = view.findViewById(R.id.tv_temp);
+        tvHum = view.findViewById(R.id.tv_hum);
+        tvInfrared = view.findViewById(R.id.tv_infrared);
+        tvSmoke = view.findViewById(R.id.tv_smoke);
+        tvBuzzer = view.findViewById(R.id.tv_buzzer);
+        tvSg90 = view.findViewById(R.id.tv_sg90);
+        tvUpdateTime = view.findViewById(R.id.tv_update_time);
 
-            // 如果点击间隔在阈值内，点击次数加一
+        // 标题点击事件（三次点击进入设置）
+        tvTitle.setOnClickListener(v -> {
+            long currentTime = System.currentTimeMillis();
             if (currentTime - lastClickTime < CLICK_TIME_INTERVAL) {
                 clickCount++;
             } else {
-                // 超过时间间隔，重置点击次数
                 clickCount = 1;
             }
-
-            // 更新上次点击时间
             lastClickTime = currentTime;
 
-            // 点击三次时执行跳转
             if (clickCount == 3) {
-                // 重置点击计数
                 clickCount = 0;
-
-                // 切换到settings界面
                 Intent intent = new Intent(getActivity(), Settings.class);
                 startActivity(intent);
             }
@@ -261,29 +259,66 @@ public class HomeFragment extends Fragment {
                 return;
             }
 
-            // 构建数据显示字符串
-            StringBuilder dataBuilder = new StringBuilder();
+            // 初始化变量
+            String temp = "--";
+            String hum = "--";
+            String infrared = "--";
+            String smoke = "--";
+            boolean buzzer = false;
+            boolean sg90 = false;
 
-            // 遍历所有数据项，直接打印identifier和value
+            // 遍历所有数据项，提取对应的值
             for (int i = 0; i < dataArray.length(); i++) {
                 JSONObject item = dataArray.getJSONObject(i);
                 String identifier = item.optString("identifier");
                 String valueStr = item.optString("value");
+                String dataType = item.optString("data_type");
 
-                if (valueStr != null && !valueStr.isEmpty()) {
-                    Log.d(TAG, identifier + ": " + valueStr);
-                    dataBuilder.append(identifier).append(": " ).append(valueStr).append("\n");
-                } else {
-                    Log.w(TAG, "属性 " + identifier + " 的值为空");
-                    dataBuilder.append(identifier).append(": 空值\n");
+                switch (identifier) {
+                    case "temp":
+                        temp = valueStr;
+                        break;
+                    case "hum":
+                        hum = valueStr;
+                        break;
+                    case "adc2_raw":
+                        infrared = valueStr;
+                        break;
+                    case "adc2_v":
+                        smoke = valueStr;
+                        break;
+                    case "buzzer":
+                        buzzer = "bool".equalsIgnoreCase(dataType) || "true".equalsIgnoreCase(valueStr);
+                        break;
+                    case "sg90":
+                        sg90 = "bool".equalsIgnoreCase(dataType) || "true".equalsIgnoreCase(valueStr);
+                        break;
                 }
             }
 
-            // 在UI线程更新TextView
+            // 在UI线程更新所有组件
             if (getActivity() != null) {
+                String finalTemp = temp;
+                String finalHum = hum;
+                String finalSmoke = smoke;
+                String finalInfrared = infrared;
+                boolean finalBuzzer = buzzer;
+                boolean finalSg9 = sg90;
                 getActivity().runOnUiThread(() -> {
-                    tvAllData.setText(dataBuilder.toString());
-                    tvAllData.setTextColor(Color.BLACK); // 恢复正常颜色
+                    // 更新温度
+                    tvTemp.setText(finalTemp);
+                    // 更新湿度
+                    tvHum.setText(finalHum);
+                    // 更新红外
+                    tvInfrared.setText(finalInfrared);
+                    // 更新烟雾
+                    tvSmoke.setText(finalSmoke);
+                    // 更新蜂鸣器状态
+                    updateBuzzerStatus(finalBuzzer);
+                    // 更新舵机状态
+                    updateSg90Status(finalSg9);
+                    // 更新时间
+                    tvUpdateTime.setText("最后更新: " + getCurrentTime());
                 });
             }
 
@@ -291,6 +326,34 @@ public class HomeFragment extends Fragment {
             Log.e(TAG, "解析数据失败: " + e.getMessage());
             showToast("数据解析失败");
         }
+    }
+
+    // 更新蜂鸣器状态显示
+    private void updateBuzzerStatus(boolean enabled) {
+        if (enabled) {
+            tvBuzzer.setText("已启用");
+            tvBuzzer.setTextColor(Color.parseColor("#27AE60"));
+        } else {
+            tvBuzzer.setText("未启用");
+            tvBuzzer.setTextColor(Color.parseColor("#E74C3C"));
+        }
+    }
+
+    // 更新舵机状态显示
+    private void updateSg90Status(boolean enabled) {
+        if (enabled) {
+            tvSg90.setText("已启用");
+            tvSg90.setTextColor(Color.parseColor("#27AE60"));
+        } else {
+            tvSg90.setText("未启用");
+            tvSg90.setTextColor(Color.parseColor("#E74C3C"));
+        }
+    }
+
+    // 获取当前时间字符串
+    private String getCurrentTime() {
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault());
+        return sdf.format(new java.util.Date());
     }
 
     // 生成认证Token
